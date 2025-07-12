@@ -1,7 +1,7 @@
 {
   "name": "vyges/spi-controller",
   "version": "1.0.0",
-  "description": "Configurable SPI master controller with APB interface, FIFO support, and interrupt capabilities. Supports all 4 SPI modes with configurable clock polarity and phase.",
+  "description": "Serial Peripheral Interface (SPI) master controller supporting all four SPI modes, with APB bus interface, configurable FIFO buffering, and interrupt capabilities. Enables flexible clock polarity/phase, high-speed data transfer, and easy integration into ASIC and FPGA designs",
   "license": "Apache-2.0",
   "template": "vyges-ip-template@1.0.0",
   "target": ["asic", "fpga"],
