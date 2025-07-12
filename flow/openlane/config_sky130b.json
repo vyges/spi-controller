@@ -1,0 +1,23 @@
+{
+  "DESIGN_NAME": "spi_controller",
+  "VERILOG_FILES": ["../../rtl/spi_controller.sv", "../../rtl/spi_fifo.sv", "../../rtl/spi_protocol_engine.sv"],
+  "CLOCK_PORT": "pclk_i",
+  "CLOCK_PERIOD": 10.0,
+  "FP_PIN_ORDER_CFG": "pin_order_sky130b.cfg",
+  "SDC_FILE": "constraints_sky130b.sdc",
+  "PLATFORM": "sky130bhd",
+  "CORE_UTILIZATION": 80,
+  "DIE_AREA": "0 0 500 500",
+  "CORE_AREA": "50 50 450 450",
+  "PDK": "sky130b",
+  "PDK_ROOT": "$PDK_ROOT/sky130b",
+  "SYNTH_STRATEGY": 0,
+  "ROUTING_STRATEGY": 0,
+  "FP_ASPECT_RATIO": 1.0,
+  "FP_IO_HMETAL": 5,
+  "FP_IO_VMETAL": 5,
+  "FP_IO_VLENGTH": 20,
+  "FP_IO_HLENGTH": 20,
+  "FP_IO_VOFFSET": 10,
+  "FP_IO_HOFFSET": 10
+} 
