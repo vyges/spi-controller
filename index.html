@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vyges SPI Controller IP - Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@1,400&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6;
+            color: #24292e;
+        }
+        h1 { 
+            color: #0366d6; 
+            border-bottom: 2px solid #e1e4e8; 
+            padding-bottom: 10px; 
+            margin-top: 0;
+        }
+        h2 { 
+            color: #24292e; 
+            margin-top: 30px; 
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 5px;
+        }
+        .timestamp { 
+            color: #586069; 
+            font-size: 14px; 
+            margin-bottom: 30px;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td { 
+            border: 1px solid #e1e4e8; 
+            padding: 16px; 
+            text-align: left; 
+            vertical-align: top;
+        }
+        th { 
+            background-color: #f6f8fa; 
+            font-weight: 600;
+            color: #24292e;
+        }
+        tr:nth-child(even) { 
+            background-color: #f8f9fa; 
+        }
+        tr:hover { 
+            background-color: #f1f3f4; 
+        }
+        .report-link { 
+            display: inline-block; 
+            background: #0366d6; 
+            color: white; 
+            padding: 6px 12px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            margin: 2px 4px 2px 0;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .report-link:hover { 
+            background: #0256cc; 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .report-link.html { 
+            background: #28a745; 
+        }
+        .report-link.html:hover { 
+            background: #218838; 
+        }
+        .report-link.md { 
+            background: #6f42c1; 
+        }
+        .report-link.md:hover { 
+            background: #5a32a3; 
+        }
+        .category-header {
+            background: #f6f8fa;
+            font-weight: 600;
+            color: #24292e;
+            border-left: 4px solid #0366d6;
+        }
+        .category-header.test-verification {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .category-header.asic-synthesis {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+        .category-header.fpga-synthesis {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        .test-verification {
+            background: #f8fbff;
+        }
+        .test-verification:nth-child(even) {
+            background: #f0f8ff;
+        }
+        .asic-synthesis {
+            background: #faf5ff;
+        }
+        .asic-synthesis:nth-child(even) {
+            background: #f3e8ff;
+        }
+        .fpga-synthesis {
+            background: #f5fff5;
+        }
+        .fpga-synthesis:nth-child(even) {
+            background: #e8ffe8;
+        }
+        .summary-box {
+            background: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .summary-box h3 {
+            margin-top: 0;
+            color: #0366d6;
+        }
+        .summary-list {
+            list-style: none;
+            padding: 0;
+        }
+        .summary-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        .summary-list li:last-child {
+            border-bottom: none;
+        }
+        .summary-list strong {
+            color: #24292e;
+        }
+        .vyges-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 30px 0;
+            margin: -20px -20px 30px -20px;
+            text-align: center;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .vyges-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .vyges-logo {
+            font-size: 2.5em;
+            font-weight: 400;
+            font-style: italic;
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+            text-transform: lowercase;
+        }
+        .vyges-tagline {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin-bottom: 0;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        .vyges-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e1e4e8;
+            padding: 20px 0;
+            margin: 40px -20px -20px -20px;
+            text-align: center;
+            color: #586069;
+        }
+        .vyges-footer a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .vyges-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="vyges-header">
+        <div class="vyges-logo">
+            <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
+            <span style="vertical-align: middle;">vyges</span>
+        </div>
+        <p class="vyges-tagline">Build Silicon Like Software</p>
+    </div>
+    
+    <h1>🔧 SPI Controller IP - Comprehensive Reports</h1>
+    <p class="timestamp">Generated: Fri Jul 18 23:07:13 UTC 2025</p>
+    
+    <div class="summary-box">
+        <h3>📈 Implementation Summary</h3>
+        <ul class="summary-list">
+            <li><strong>APB v2.0 Interface:</strong> Standard AMBA APB slave interface</li>
+            <li><strong>All 4 SPI Modes:</strong> Mode 0, 1, 2, 3 (CPOL/CPHA combinations)</li>
+            <li><strong>Configurable Data Width:</strong> 8, 16, or 32-bit data transfers</li>
+            <li><strong>FIFO Buffering:</strong> 4 to 64 entries for TX/RX buffering</li>
+            <li><strong>Multi-Slave Support:</strong> Up to 16 independent SPI devices</li>
+            <li><strong>Interrupt Generation:</strong> TX empty, RX full, transfer complete, error interrupts</li>
+        </ul>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Report Name</th>
+                <th style="width: 50%;">Description</th>
+                <th style="width: 25%;">Reports</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="category-header test-verification">
+                <td colspan="3">🧪 Test & Verification</td>
+            </tr>
+            <tr class="test-verification">
+                <td><strong>Test Harness Report</strong></td>
+                <td>Comprehensive test results including simulation, synthesis, and validation reports for SPI Controller IP with all SPI modes and FIFO testing.</td>
+                <td>
+                    <a href="./test_harness_report.html" class="report-link html">HTML</a>
+                    <a href="./test_harness_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+            
+            <tr class="category-header asic-synthesis">
+                <td colspan="3">📊 ASIC Synthesis & Analysis</td>
+            </tr>
+            <tr class="asic-synthesis">
+                <td><strong>Comprehensive ASIC Report</strong></td>
+                <td>Complete ASIC synthesis analysis including gate counts, transistor analysis, and performance metrics for SPI Controller implementation.</td>
+                <td>
+                    <a href="./asic/comprehensive_report.html" class="report-link html">HTML</a>
+                    <a href="./asic/comprehensive_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+            <tr class="asic-synthesis">
+                <td><strong>Gate Analysis Report</strong></td>
+                <td>Detailed gate-level analysis showing primitive gate counts, transistor estimates, and design style comparisons.</td>
+                <td>
+                    <a href="./asic/gate_analysis_report.html" class="report-link html">HTML</a>
+                    <a href="./asic/gate_analysis_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+            <tr class="asic-synthesis">
+                <td><strong>Synthesis Report</strong></td>
+                <td>Yosys synthesis results including netlist generation, technology mapping, and optimization statistics.</td>
+                <td>
+                    <a href="./asic/synthesis_report.html" class="report-link html">HTML</a>
+                    <a href="./asic/synthesis_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+            
+            <tr class="category-header fpga-synthesis">
+                <td colspan="3">🔌 FPGA Synthesis & Analysis</td>
+            </tr>
+            <tr class="fpga-synthesis">
+                <td><strong>Comprehensive FPGA Report</strong></td>
+                <td>Complete FPGA resource utilization analysis and synthesis results for Xilinx 7-series devices.</td>
+                <td>
+                    <a href="./fpga/comprehensive_fpga_report.html" class="report-link html">HTML</a>
+                    <a href="./fpga/comprehensive_fpga_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+            <tr class="fpga-synthesis">
+                <td><strong>FPGA Resource Analysis</strong></td>
+                <td>Detailed LUT, flip-flop, and resource utilization analysis for FPGA implementations.</td>
+                <td>
+                    <a href="./fpga/fpga_resource_analysis_report.html" class="report-link html">HTML</a>
+                    <a href="./fpga/fpga_resource_analysis_report.md" class="report-link md">Markdown</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="vyges-footer">
+        <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+        <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank">GitHub</a> | <a href="https://vyges.com" target="_blank">Website</a></p>
+    </div>
+</body>
+</html>
