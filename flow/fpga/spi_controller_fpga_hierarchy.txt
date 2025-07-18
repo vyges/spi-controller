@@ -1,0 +1,13 @@
+15. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `spi_controller'. Setting top module to spi_controller.
+
+15.1. Analyzing design hierarchy..
+Top module:  \spi_controller
+Used module:     $paramod$393ca85bd20e3770e24a92c4c933bd6b1c660e1c\spi_fifo
+Used module:     $paramod\spi_protocol_engine\DATA_WIDTH=s32'00000000000000000000000000001000
+
+15.2. Analyzing design hierarchy..
+Top module:  \spi_controller
+Used module:     $paramod$393ca85bd20e3770e24a92c4c933bd6b1c660e1c\spi_fifo
+Used module:     $paramod\spi_protocol_engine\DATA_WIDTH=s32'00000000000000000000000000001000
+Removed 0 unused modules.

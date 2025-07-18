@@ -94,7 +94,7 @@
   },
   "toolchain_support": {
     "synthesis": ["yosys", "design_compiler"],
-    "simulation": ["verilator", "icarus", "vcs", "questa"],
+    "simulation": ["verilator", "icarus"],
     "formal": ["yosys-smtbmc", "japser"],
     "physical": ["openlane", "innovus"]
   },
@@ -116,7 +116,7 @@
         "name": "SystemVerilog Testbench",
         "file": "tb/sv_tb/tb_spi_controller.sv",
         "language": "systemverilog",
-        "simulator": ["verilator", "vcs", "questa"]
+        "simulator": ["verilator", "icarus"]
       },
       {
         "name": "Cocotb Testbench",

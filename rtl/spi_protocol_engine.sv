@@ -3,14 +3,16 @@
 //=============================================================================
 // Description: SPI protocol engine that implements all 4 SPI modes with
 //              configurable clock polarity (CPOL) and clock phase (CPHA).
-//              Supports configurable baud rate and 8-bit data transfers.
+//              Supports configurable baud rate and data width.
 //
 // Features:
 // - Support for all 4 SPI modes (0, 1, 2, 3)
 // - Configurable clock polarity and phase
 // - Configurable baud rate divider
-// - 8-bit data transfers
+// - Configurable data width (8, 16, 32 bits)
 // - Busy and done status indicators
+// - Loopback mode support
+// - Individual TX/RX/CS enable control
 //
 // SPI Modes:
 // - Mode 0: CPOL=0, CPHA=0 (clock idle low, data sampled on rising edge)
@@ -22,29 +24,35 @@
 // License: Apache-2.0
 //=============================================================================
 
-module spi_protocol_engine (
+module spi_protocol_engine #(
+    parameter int DATA_WIDTH = 8       // Data width: 8, 16, or 32 bits
+) (
     // Clock and Reset
     input  logic        clk_i,          // System clock input
     input  logic        reset_n_i,      // Reset input (active low)
     
     // Control Interface
     input  logic        enable_i,       // Enable SPI engine
+    input  logic        tx_enable_i,    // Enable transmitter
+    input  logic        rx_enable_i,    // Enable receiver
+    input  logic        cs_enable_i,    // Enable chip select
+    input  logic        loopback_i,     // Enable loopback mode
     input  logic [1:0]  mode_i,         // SPI mode (0-3)
     input  logic [15:0] baud_div_i,     // Baud rate divider
+    input  logic [7:0]  cs_delay_i,     // Chip select delay
     
     // Data Interface
-    input  logic [7:0]  tx_data_i,      // Transmit data
-    input  logic        tx_valid_i,     // Transmit data valid
-    output logic        tx_ready_o,     // Transmit ready
+    input  logic [DATA_WIDTH-1:0] tx_data_i,      // Transmit data
+    input  logic                  tx_valid_i,     // Transmit data valid
+    output logic                  tx_ready_o,     // Transmit ready
     
-    output logic [7:0]  rx_data_o,      // Receive data
-    output logic        rx_valid_o,     // Receive data valid
+    output logic [DATA_WIDTH-1:0] rx_data_o,      // Receive data
+    output logic                  rx_valid_o,     // Receive data valid
     
     // SPI Interface
     output logic        spi_clk_o,      // SPI clock output
     output logic        spi_mosi_o,     // SPI master out, slave in
     input  logic        spi_miso_i,     // SPI master in, slave out
-    output logic        spi_csn_o,      // SPI chip select (active low)
     
     // Status
     output logic        busy_o,         // SPI engine busy
@@ -53,14 +61,16 @@ module spi_protocol_engine (
 
     // Local parameters
     localparam int COUNTER_WIDTH = 16;
+    localparam int BIT_COUNTER_WIDTH = $clog2(DATA_WIDTH);
     
     // Internal signals
     logic [COUNTER_WIDTH-1:0] clk_counter;      // Clock divider counter
     logic                     spi_clk_internal; // Internal SPI clock
-    logic [2:0]              bit_counter;      // Bit counter (0-7)
-    logic [7:0]              tx_shift_reg;     // Transmit shift register
-    logic [7:0]              rx_shift_reg;     // Receive shift register
-    logic                     spi_csn_internal; // Internal chip select
+    logic [BIT_COUNTER_WIDTH-1:0] bit_counter;  // Bit counter (0 to DATA_WIDTH-1)
+    logic [DATA_WIDTH-1:0]    tx_shift_reg;     // Transmit shift register
+    logic [DATA_WIDTH-1:0]    rx_shift_reg;     // Receive shift register
+    logic [7:0]               cs_delay_counter; // Chip select delay counter
+    logic                     cs_delay_active;  // Chip select delay active
     
     // SPI mode decoding
     logic cpol;  // Clock polarity
@@ -94,6 +104,7 @@ module spi_protocol_engine (
     typedef enum logic [2:0] {
         IDLE,
         START,
+        CS_DELAY,
         TRANSFER,
         STOP
     } state_t;
@@ -121,13 +132,21 @@ module spi_protocol_engine (
             end
             
             START: begin
-                if (clk_counter == 0 && spi_clk_internal == (cpol ^ cpha)) begin
+                if (cs_delay_i == 0) begin
+                    next_state = TRANSFER;
+                end else begin
+                    next_state = CS_DELAY;
+                end
+            end
+            
+            CS_DELAY: begin
+                if (cs_delay_counter >= cs_delay_i) begin
                     next_state = TRANSFER;
                 end
             end
             
             TRANSFER: begin
-                if (bit_counter == 7 && clk_counter == 0 && spi_clk_internal == (cpol ^ cpha)) begin
+                if (bit_counter == (DATA_WIDTH-1) && clk_counter == 0 && spi_clk_internal == (cpol ^ cpha)) begin
                     next_state = STOP;
                 end
             end
@@ -153,6 +172,17 @@ module spi_protocol_engine (
         end
     end
     
+    // Chip select delay counter
+    always_ff @(posedge clk_i or negedge reset_n_i) begin
+        if (!reset_n_i) begin
+            cs_delay_counter <= '0;
+        end else if (current_state == IDLE) begin
+            cs_delay_counter <= '0;
+        end else if (current_state == CS_DELAY) begin
+            cs_delay_counter <= cs_delay_counter + 1;
+        end
+    end
+    
     // Transmit shift register
     always_ff @(posedge clk_i or negedge reset_n_i) begin
         if (!reset_n_i) begin
@@ -160,7 +190,7 @@ module spi_protocol_engine (
         end else if (current_state == IDLE && tx_valid_i) begin
             tx_shift_reg <= tx_data_i;
         end else if (current_state == TRANSFER && clk_counter == 0 && spi_clk_internal == (cpol ^ cpha)) begin
-            tx_shift_reg <= {tx_shift_reg[6:0], 1'b0};
+            tx_shift_reg <= {tx_shift_reg[DATA_WIDTH-2:0], 1'b0};
         end
     end
     
@@ -169,24 +199,12 @@ module spi_protocol_engine (
         if (!reset_n_i) begin
             rx_shift_reg <= '0;
         end else if (current_state == TRANSFER && clk_counter == 0 && spi_clk_internal == (cpol ^ ~cpha)) begin
-            rx_shift_reg <= {rx_shift_reg[6:0], spi_miso_i};
-        end
-    end
-    
-    // Chip select logic
-    always_ff @(posedge clk_i or negedge reset_n_i) begin
-        if (!reset_n_i) begin
-            spi_csn_internal <= 1'b1;  // Inactive (high)
-        end else if (current_state == START) begin
-            spi_csn_internal <= 1'b0;  // Active (low)
-        end else if (current_state == STOP && clk_counter == 0 && spi_clk_internal == cpol) begin
-            spi_csn_internal <= 1'b1;  // Inactive (high)
+            rx_shift_reg <= {rx_shift_reg[DATA_WIDTH-2:0], spi_miso_i};
         end
     end
     
     // Output assignments
-    assign spi_mosi_o = tx_shift_reg[7];
-    assign spi_csn_o = spi_csn_internal;
+    assign spi_mosi_o = tx_shift_reg[DATA_WIDTH-1];
     
     // Status signals
     assign busy_o = (current_state != IDLE);

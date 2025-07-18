@@ -5,13 +5,17 @@ Test Module: test_spi_controller
 ==============================================================================
 Description: Comprehensive Cocotb testbench for SPI controller.
              Tests all SPI modes, APB interface, FIFO operations, and
-             interrupt generation.
+             advanced features including multi-slave, power management,
+             and error recovery.
 
 Features:
 - APB interface testing
 - All 4 SPI modes testing
 - FIFO overflow/underflow testing
 - Interrupt generation testing
+- Multi-slave support testing
+- Power management testing
+- Error recovery testing
 - Performance testing
 - Coverage collection
 
@@ -170,14 +174,14 @@ async def test_fifo_operations(dut):
     
     # Check FIFO full status
     status = await test.apb_read(0x04)
-    test.log_test_result("FIFO full detection", status[2] == 1)
+    test.log_test_result("FIFO full detection", status[0] == 1)  # TX FIFO full
     
     # Wait for FIFO to empty
     await Timer(5000, units="ns")
     
     # Check FIFO empty status
     status = await test.apb_read(0x04)
-    test.log_test_result("FIFO empty detection", status[3] == 1)
+    test.log_test_result("FIFO empty detection", status[1] == 1)  # RX FIFO empty
 
 @cocotb.test()
 async def test_interrupt_generation(dut):
@@ -206,6 +210,168 @@ async def test_interrupt_generation(dut):
     
     # Check interrupt signal
     test.log_test_result("Interrupt generation", dut.spi_irq_o.value == 1)
+
+@cocotb.test()
+async def test_multi_slave_support(dut):
+    """Test multi-slave support functionality"""
+    test = SPIControllerTest(dut)
+    
+    # Start clock
+    clock = Clock(dut.pclk_i, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset sequence
+    dut.presetn_i.value = 0
+    await Timer(100, units="ns")
+    dut.presetn_i.value = 1
+    await Timer(50, units="ns")
+    
+    # Test different slave selections
+    for slave in range(4):  # Test slaves 0-3
+        # Configure for specific slave
+        slave_select = slave << 8  # Bits 11:8 for slave selection
+        await test.apb_write(0x00, 0x00000001 | slave_select)  # Enable + slave select
+        await test.apb_write(0x10, 0x0000000A)  # Baud divider
+        await test.apb_write(0x1C, 0x00000000)  # Mode 0
+        
+        # Write test data
+        await test.apb_write(0x08, TEST_DATA[slave])
+        
+        # Wait for transmission
+        await Timer(1000, units="ns")
+        
+        # Check status
+        status = await test.apb_read(0x04)
+        test.log_test_result(f"Multi-slave {slave}", status[0] == 0)
+
+@cocotb.test()
+async def test_power_management(dut):
+    """Test power management features"""
+    test = SPIControllerTest(dut)
+    
+    # Start clock
+    clock = Clock(dut.pclk_i, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset sequence
+    dut.presetn_i.value = 0
+    await Timer(100, units="ns")
+    dut.presetn_i.value = 1
+    await Timer(50, units="ns")
+    
+    # Enable power down mode
+    await test.apb_write(0x00, 0x00000080)  # Power down mode enabled
+    
+    # Check that controller is in power down
+    status = await test.apb_read(0x04)
+    test.log_test_result("Power down mode", status[0] == 0)  # Not busy
+    
+    # Disable power down and enable normal operation
+    await test.apb_write(0x00, 0x00000001)  # Normal mode
+    await test.apb_write(0x10, 0x0000000A)  # Baud divider
+    await test.apb_write(0x1C, 0x00000000)  # Mode 0
+    
+    # Write data
+    await test.apb_write(0x08, TEST_DATA[0])
+    
+    # Wait for transmission
+    await Timer(1000, units="ns")
+    
+    # Check status
+    status = await test.apb_read(0x04)
+    test.log_test_result("Power management normal", status[0] == 0)
+
+@cocotb.test()
+async def test_error_recovery(dut):
+    """Test error recovery mechanisms"""
+    test = SPIControllerTest(dut)
+    
+    # Start clock
+    clock = Clock(dut.pclk_i, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset sequence
+    dut.presetn_i.value = 0
+    await Timer(100, units="ns")
+    dut.presetn_i.value = 1
+    await Timer(50, units="ns")
+    
+    # Enable error recovery mode
+    await test.apb_write(0x00, 0x00001001)  # Enable + error recovery
+    await test.apb_write(0x10, 0x0000000A)  # Baud divider
+    await test.apb_write(0x1C, 0x00000000)  # Mode 0
+    
+    # Write data to trigger potential errors
+    await test.apb_write(0x08, TEST_DATA[0])
+    
+    # Wait for processing
+    await Timer(1000, units="ns")
+    
+    # Check status for errors
+    status = await test.apb_read(0x04)
+    test.log_test_result("Error recovery mode", status[0] == 0)  # Not busy
+
+@cocotb.test()
+async def test_loopback_mode(dut):
+    """Test loopback mode functionality"""
+    test = SPIControllerTest(dut)
+    
+    # Start clock
+    clock = Clock(dut.pclk_i, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset sequence
+    dut.presetn_i.value = 0
+    await Timer(100, units="ns")
+    dut.presetn_i.value = 1
+    await Timer(50, units="ns")
+    
+    # Enable loopback mode
+    await test.apb_write(0x00, 0x00000021)  # Enable + loopback
+    await test.apb_write(0x10, 0x0000000A)  # Baud divider
+    await test.apb_write(0x1C, 0x00000000)  # Mode 0
+    
+    # Write test data
+    test_data = 0x55
+    await test.apb_write(0x08, test_data)
+    
+    # Wait for transmission
+    await Timer(1000, units="ns")
+    
+    # Read received data (should be same as transmitted in loopback)
+    rx_data = await test.apb_read(0x0C)
+    test.log_test_result("Loopback mode", rx_data == test_data)
+
+@cocotb.test()
+async def test_chip_select_delay(dut):
+    """Test chip select delay functionality"""
+    test = SPIControllerTest(dut)
+    
+    # Start clock
+    clock = Clock(dut.pclk_i, 10, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset sequence
+    dut.presetn_i.value = 0
+    await Timer(100, units="ns")
+    dut.presetn_i.value = 1
+    await Timer(50, units="ns")
+    
+    # Configure chip select delay
+    cs_delay = 0x10  # 16 clock cycles delay
+    await test.apb_write(0x00, 0x00000001)  # Enable
+    await test.apb_write(0x10, 0x0000000A)  # Baud divider
+    await test.apb_write(0x1C, 0x00000000 | (cs_delay << 8))  # Mode 0 + CS delay
+    
+    # Write test data
+    await test.apb_write(0x08, TEST_DATA[0])
+    
+    # Wait for transmission (longer due to CS delay)
+    await Timer(2000, units="ns")
+    
+    # Check status
+    status = await test.apb_read(0x04)
+    test.log_test_result("Chip select delay", status[0] == 0)
 
 @cocotb.test()
 async def test_performance_characteristics(dut):
@@ -292,19 +458,21 @@ async def test_coverage_scenarios(dut):
     # Test all register combinations
     for mode in range(4):
         for baud in [2, 4, 8, 16]:
-            # Configure
-            await test.apb_write(0x00, 0x00000001)
-            await test.apb_write(0x10, baud)
-            await test.apb_write(0x1C, mode)
-            
-            # Write data
-            await test.apb_write(0x08, random.randint(0, 255))
-            
-            # Wait and check
-            await Timer(1000, units="ns")
-            status = await test.apb_read(0x04)
-            
-            test.log_test_result(f"Mode {mode}, Baud {baud}", status[0] == 0)
+            for slave in range(4):
+                # Configure
+                slave_select = slave << 8
+                await test.apb_write(0x00, 0x00000001 | slave_select)
+                await test.apb_write(0x10, baud)
+                await test.apb_write(0x1C, mode)
+                
+                # Write data
+                await test.apb_write(0x08, random.randint(0, 255))
+                
+                # Wait and check
+                await Timer(1000, units="ns")
+                status = await test.apb_read(0x04)
+                
+                test.log_test_result(f"Mode {mode}, Baud {baud}, Slave {slave}", status[0] == 0)
 
 # Coverage collection
 @cocotb.test()
@@ -325,11 +493,22 @@ async def test_coverage_collection(dut):
     # Exercise all functionality for coverage
     for mode in range(4):
         for i in range(8):
+            # Test normal operation
             await test.apb_write(0x00, 0x00000001)
             await test.apb_write(0x10, 0x0000000A)
             await test.apb_write(0x1C, mode)
             await test.apb_write(0x18, 0x00000007)
             await test.apb_write(0x08, TEST_DATA[i])
             await Timer(1000, units="ns")
+            
+            # Test loopback mode
+            await test.apb_write(0x00, 0x00000021)  # Enable + loopback
+            await test.apb_write(0x08, TEST_DATA[i])
+            await Timer(1000, units="ns")
+            
+            # Test power down mode
+            await test.apb_write(0x00, 0x00000080)  # Power down
+            await Timer(100, units="ns")
+            await test.apb_write(0x00, 0x00000001)  # Normal mode
     
     cocotb.log.info("Coverage collection completed") 

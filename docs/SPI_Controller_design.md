@@ -483,7 +483,7 @@ tb/
 **FPGA Simulation Tools:**
 - **Vivado Simulator**: For Xilinx FPGA simulation
 - **ModelSim**: For Intel FPGA simulation
-- **Questa**: For advanced FPGA verification
+- **Verilator**: For advanced verification and coverage
 
 **FPGA-Specific Test Cases:**
 - **Clock Domain Crossing**: Verify CDC logic

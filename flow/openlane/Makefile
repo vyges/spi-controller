@@ -1,63 +1,106 @@
-# flow/openlane/Makefile
-# Makefile for running OpenLane flow on top_wrapper
-#
-# This sets up and runs the OpenLane flow for your design using the official OpenLane Docker CLI.
-# It assumes:
-# - You’re running OpenLane via Docker.
-# - Your design files and config.json are located under flow/openlane/.
-# - Your design’s top module is top_wrapper.
+# OpenLane Makefile for SPI Controller
+# Targets for complete ASIC flow
 
-# Note: Automatically mounts project and PDK directories and works with official OpenLane Docker environment.
+# Configuration
+DESIGN_NAME = spi_controller
+OPENLANE_ROOT = $(shell pwd)/../../..
+FLOW_PATH = $(OPENLANE_ROOT)/flow
+DESIGN_PATH = $(shell pwd)/$(DESIGN_NAME)
 
-# Usage:
-# cd flow/openlane
-# make run     # runs OpenLane flow using your config.json
-# make final   # collects final results (GDS, DEF, etc.) into a final/ dir
-# make clean   # removes run artifacts
+# OpenLane commands
+OPENLANE_CMD = $(FLOW_PATH)/scripts/openlane
+OPENLANE_SCRIPT = $(FLOW_PATH)/scripts/openlane
 
+# Default target
+all: gds
 
-# Design name
-DESIGN_NAME := top_wrapper
+# Synthesis
+synth:
+	@echo "Running synthesis for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_synth
+	@echo "Synthesis complete"
 
-# Paths
-FLOW_DIR := $(shell pwd)
-OPENLANE_ROOT ?= $(HOME)/OpenLane
-PDK := sky130A
-PDK_ROOT ?= $(HOME)/pdks
-CONFIG_FILE := config.json
+# Floorplan
+floorplan:
+	@echo "Running floorplan for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_floorplan
+	@echo "Floorplan complete"
 
-# Docker image/tag (change if using a different version)
-OPENLANE_DOCKER_IMAGE := openlane:latest
+# Placement
+place:
+	@echo "Running placement for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_place
+	@echo "Placement complete"
 
-# Docker run settings
-DOCKER_CMD := docker run -it --rm \
-	-v $(OPENLANE_ROOT):/openlane \
-	-v $(PDK_ROOT):/pdks \
-	-v $(FLOW_DIR):/project \
-	-e PDK=$(PDK) \
-	-e PDK_ROOT=/pdks \
-	-e DESIGN_NAME=$(DESIGN_NAME) \
-	-u $(shell id -u):$(shell id -g) \
-	$(OPENLANE_DOCKER_IMAGE)
+# Clock Tree Synthesis
+cts:
+	@echo "Running CTS for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_cts
+	@echo "CTS complete"
 
-.PHONY: run clean final
+# Routing
+route:
+	@echo "Running routing for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_route
+	@echo "Routing complete"
 
-## Run the OpenLane flow
-run:
-	$(DOCKER_CMD) bash -c \
-		"cd /openlane && \
-		 flow.tcl -design /project -override_config_file /project/$(CONFIG_FILE)"
+# Timing Analysis
+timing:
+	@echo "Running timing analysis for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_timing
+	@echo "Timing analysis complete"
 
-## Copy GDS, DEF, and netlist outputs to a local final/ directory
-final:
-	mkdir -p final
-	cp -v runs/$(DESIGN_NAME)/results/final/gds/*.gds       final/ || true
-	cp -v runs/$(DESIGN_NAME)/results/final/def/*.def       final/ || true
-	cp -v runs/$(DESIGN_NAME)/results/final/verilog/*.v     final/ || true
-	cp -v runs/$(DESIGN_NAME)/results/final/spef/*.spef     final/ || true
-	cp -v runs/$(DESIGN_NAME)/results/final/sdf/*.sdf       final/ || true
-	cp -v runs/$(DESIGN_NAME)/results/final/lef/*.lef       final/ || true
+# DRC Check
+drc:
+	@echo "Running DRC check for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_drc
+	@echo "DRC check complete"
 
-## Clean all generated output
+# LVS Check
+lvs:
+	@echo "Running LVS check for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_lvs
+	@echo "LVS check complete"
+
+# Power Analysis
+power:
+	@echo "Running power analysis for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_power
+	@echo "Power analysis complete"
+
+# Complete flow (synthesis to GDS)
+flow: synth floorplan place cts route timing drc lvs power
+	@echo "Complete OpenLane flow finished"
+
+# GDS generation
+gds: flow
+	@echo "Generating GDS for $(DESIGN_NAME)..."
+	$(OPENLANE_CMD) -interactive -file $(DESIGN_PATH)/config.tcl -tag $(DESIGN_NAME)_gds
+	@echo "GDS generation complete"
+
+# Clean
 clean:
-	rm -rf runs final
+	@echo "Cleaning OpenLane runs..."
+	rm -rf runs/
+	rm -rf logs/
+	rm -rf reports/
+	@echo "Clean complete"
+
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  synth     - Run synthesis"
+	@echo "  floorplan - Run floorplanning"
+	@echo "  place     - Run placement"
+	@echo "  cts       - Run clock tree synthesis"
+	@echo "  route     - Run routing"
+	@echo "  timing    - Run timing analysis"
+	@echo "  drc       - Run DRC check"
+	@echo "  lvs       - Run LVS check"
+	@echo "  power     - Run power analysis"
+	@echo "  flow      - Run complete flow (synthesis to verification)"
+	@echo "  gds       - Generate GDS (includes complete flow)"
+	@echo "  clean     - Clean all generated files"
+	@echo "  help      - Show this help message"
+
+.PHONY: all synth floorplan place cts route timing drc lvs power flow gds clean help

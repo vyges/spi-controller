@@ -1,29 +1,27 @@
-#=============================================================================
-# SPI Controller Testbench Makefile
-#=============================================================================
-# Testbench automation for SPI Controller IP block
-# Supports multiple simulators and test frameworks
-#
-# Author: Shivaram Mysore
-# License: Apache-2.0
-#=============================================================================
+#==============================================================================
+# SPI Controller SystemVerilog Testbench Makefile
+#==============================================================================
+# Description: SystemVerilog testbench automation for SPI Controller IP block
+#              Supports multiple simulators (Icarus, Verilator)
+# Author:      Vyges Team
+# Date:        2025-07-17
+# Version:     1.0.0
+#==============================================================================
 
 # Testbench configuration
 TOP_MODULE := tb_spi_controller
 RTL_FILES := ../rtl/spi_controller.sv ../rtl/spi_fifo.sv ../rtl/spi_protocol_engine.sv
 TB_FILES := sv_tb/tb_spi_controller.sv
-COCOTB_DIR := cocotb
 
 # Simulator configuration
 VERILATOR := verilator
 ICARUS := iverilog
-VCS := vcs
-MODELSIM := vsim
+VVP := vvp
 
 # Simulation options
 SIM_OPTS := -g2012
-VERILATOR_OPTS := --cc --exe --build --trace --coverage --assert
-COCOTB_OPTS := SIM=verilator COCOTB_REDUCED_LOG_FMT=1
+VERILATOR_OPTS := --cc --exe --build --trace --coverage --assert --Wall --Wno-fatal --Wno-EOFNEWLINE --Wno-DECLFILENAME --Wno-UNUSEDSIGNAL --Wno-TIMESCALEMOD --Wno-PKGNODECL --Wno-NEEDTIMINGOPT
+ICARUS_OPTS := -g2012 -Wall
 
 # Output directories
 BUILD_DIR := build
@@ -37,29 +35,38 @@ all: help
 # Help target
 .PHONY: help
 help:
-	@echo "SPI Controller Testbench System"
-	@echo "==============================="
+	@echo "SPI Controller SystemVerilog Testbench"
+	@echo "======================================"
 	@echo ""
-	@echo "Simulation Targets:"
-	@echo "  sim-verilator     - Run Verilator simulation"
-	@echo "  sim-icarus        - Run Icarus Verilog simulation"
-	@echo "  sim-vcs           - Run VCS simulation"
-	@echo "  sim-modelsim      - Run ModelSim simulation"
-	@echo "  sim-cocotb        - Run Cocotb simulation"
-	@echo "  sim-all           - Run all simulations"
+	@echo "Available simulators (set SIM=<simulator>):"
+	@echo "  icarus    - Icarus Verilog (default)"
+	@echo "  verilator - Verilator"
 	@echo ""
-	@echo "Test Categories:"
-	@echo "  test-functional   - Run functional tests"
-	@echo "  test-performance  - Run performance tests"
-	@echo "  test-corner       - Run corner case tests"
-	@echo "  test-coverage     - Run coverage tests"
+	@echo "Test targets:"
+	@echo "  test_basic   - Run basic functionality test"
+	@echo "  test_random  - Run random stimulus test"
+	@echo "  test_all     - Run all tests"
+	@echo "  coverage     - Run coverage analysis (Verilator only)"
 	@echo ""
-	@echo "Analysis:"
-	@echo "  waves             - View waveforms"
-	@echo "  coverage          - Generate coverage report"
+	@echo "Utility targets:"
+	@echo "  compile      - Compile testbench"
+	@echo "  run          - Run simulation"
+	@echo "  waves        - View waveforms"
+	@echo "  clean        - Clean build artifacts"
+	@echo "  help         - Show this help message"
 	@echo ""
-	@echo "Cleanup:"
-	@echo "  clean             - Clean build artifacts"
+	@echo "Usage examples:"
+	@echo "  make test_basic SIM=icarus"
+	@echo "  make test_all SIM=verilator"
+	@echo "  make coverage SIM=verilator"
+
+# Validation target
+.PHONY: validate_simulator
+validate_simulator:
+	@if [ "$(filter $(SIM),icarus verilator)" = "" ]; then \
+		echo "Error: Invalid simulator '$(SIM)'. Valid simulators: icarus verilator"; \
+		exit 1; \
+	fi
 
 # Create build directories
 $(BUILD_DIR):
@@ -71,110 +78,139 @@ $(WAVES_DIR):
 $(COVERAGE_DIR):
 	mkdir -p $(COVERAGE_DIR)
 
-# Verilator simulation
-.PHONY: sim-verilator
-sim-verilator: $(BUILD_DIR)
-	@echo "Running Verilator simulation..."
-	$(VERILATOR) $(VERILATOR_OPTS) \
+# Compile target
+.PHONY: compile
+compile: validate_simulator $(BUILD_DIR)
+	@echo "Compiling testbench with $(SIM) simulator..."
+	@case "$(SIM)" in \
+		icarus) \
+			$(ICARUS) $(ICARUS_OPTS) -o $(BUILD_DIR)/$(TOP_MODULE)_icarus \
+				$(RTL_FILES) $(TB_FILES) || exit 1; \
+			;; \
+		verilator) \
+			$(VERILATOR) $(VERILATOR_OPTS) \
+				-CFLAGS "-std=c++11" \
+				$(RTL_FILES) $(TB_FILES) \
+				-o $(BUILD_DIR)/$(TOP_MODULE)_verilator || exit 1; \
+			;; \
+	esac
+	@echo "Compilation completed successfully!"
+
+# Run target
+.PHONY: run
+run: validate_simulator compile
+	@echo "Running simulation with $(SIM) simulator..."
+	@case "$(SIM)" in \
+		icarus) \
+			$(VVP) $(BUILD_DIR)/$(TOP_MODULE)_icarus || exit 1; \
+			;; \
+		verilator) \
+			$(BUILD_DIR)/obj_dir/V$(TOP_MODULE) +trace || exit 1; \
+			;; \
+	esac
+	@echo "Simulation completed successfully!"
+
+# Test targets
+.PHONY: test_basic
+test_basic: validate_simulator $(BUILD_DIR)
+	@echo "Running basic functionality test with $(SIM) simulator..."
+	@case "$(SIM)" in \
+		icarus) \
+			$(ICARUS) $(ICARUS_OPTS) -o $(BUILD_DIR)/$(TOP_MODULE)_icarus \
+				$(RTL_FILES) $(TB_FILES) || exit 1; \
+			$(VVP) $(BUILD_DIR)/$(TOP_MODULE)_icarus || exit 1; \
+			;; \
+		verilator) \
+			$(VERILATOR) $(VERILATOR_OPTS) \
+				-CFLAGS "-std=c++11" \
+				$(RTL_FILES) $(TB_FILES) \
+				-o $(BUILD_DIR)/$(TOP_MODULE)_verilator || exit 1; \
+			$(BUILD_DIR)/obj_dir/V$(TOP_MODULE) +trace || exit 1; \
+			;; \
+	esac
+	@echo "Basic test completed successfully!"
+
+.PHONY: test_random
+test_random: validate_simulator $(BUILD_DIR)
+	@echo "Running random stimulus test with $(SIM) simulator..."
+	@case "$(SIM)" in \
+		icarus) \
+			$(ICARUS) $(ICARUS_OPTS) -o $(BUILD_DIR)/$(TOP_MODULE)_icarus \
+				$(RTL_FILES) $(TB_FILES) || exit 1; \
+			$(VVP) $(BUILD_DIR)/$(TOP_MODULE)_icarus +random_test=1 || exit 1; \
+			;; \
+		verilator) \
+			$(VERILATOR) $(VERILATOR_OPTS) \
+				-CFLAGS "-std=c++11" \
+				$(RTL_FILES) $(TB_FILES) \
+				-o $(BUILD_DIR)/$(TOP_MODULE)_verilator || exit 1; \
+			$(BUILD_DIR)/obj_dir/V$(TOP_MODULE) +trace +random_test=1 || exit 1; \
+			;; \
+	esac
+	@echo "Random test completed successfully!"
+
+.PHONY: test_all
+test_all: validate_simulator
+	@echo "Running all tests with $(SIM) simulator..."
+	$(MAKE) test_basic SIM=$(SIM)
+	$(MAKE) test_random SIM=$(SIM)
+	@echo "All tests completed successfully!"
+
+# Coverage target
+.PHONY: coverage
+coverage: validate_simulator $(COVERAGE_DIR)
+	@if [ "$(SIM)" != "verilator" ]; then \
+		echo "Error: Coverage only supported with Verilator simulator"; \
+		exit 1; \
+	fi
+	@echo "Running coverage analysis with Verilator..."
+	$(VERILATOR) $(VERILATOR_OPTS) --coverage \
 		-CFLAGS "-std=c++11" \
-		$(RTL_FILES) \
-		$(TB_FILES) \
-		-o $(BUILD_DIR)/$(TOP_MODULE)_verilator
-	$(BUILD_DIR)/obj_dir/V$(TOP_MODULE) +trace
-
-# Icarus Verilog simulation
-.PHONY: sim-icarus
-sim-icarus: $(BUILD_DIR)
-	@echo "Running Icarus Verilog simulation..."
-	$(ICARUS) $(SIM_OPTS) -o $(BUILD_DIR)/$(TOP_MODULE)_icarus \
-		$(RTL_FILES) $(TB_FILES)
-	vvp $(BUILD_DIR)/$(TOP_MODULE)_icarus
-
-# VCS simulation
-.PHONY: sim-vcs
-sim-vcs: $(BUILD_DIR)
-	@echo "Running VCS simulation..."
-	$(VCS) -full64 -sverilog $(SIM_OPTS) \
 		$(RTL_FILES) $(TB_FILES) \
-		-o $(BUILD_DIR)/$(TOP_MODULE)_vcs
-	$(BUILD_DIR)/$(TOP_MODULE)_vcs
-
-# ModelSim simulation
-.PHONY: sim-modelsim
-sim-modelsim: $(BUILD_DIR)
-	@echo "Running ModelSim simulation..."
-	vlib $(BUILD_DIR)/work
-	vmap work $(BUILD_DIR)/work
-	vlog -sv $(RTL_FILES) $(TB_FILES)
-	vsim -c -do "run -all; quit" $(TOP_MODULE)
-
-# Cocotb simulation
-.PHONY: sim-cocotb
-sim-cocotb: $(BUILD_DIR)
-	@echo "Running Cocotb simulation..."
-	cd $(COCOTB_DIR) && \
-	$(COCOTB_OPTS) make
-
-# Run all simulations
-.PHONY: sim-all
-sim-all: sim-verilator sim-icarus sim-vcs sim-cocotb
-
-# Test category targets
-.PHONY: test-functional
-test-functional: sim-verilator
-	@echo "Functional tests completed"
-
-.PHONY: test-performance
-test-performance: sim-verilator
-	@echo "Performance tests completed"
-
-.PHONY: test-corner
-test-corner: sim-verilator
-	@echo "Corner case tests completed"
-
-.PHONY: test-coverage
-test-coverage: $(COVERAGE_DIR)
-	@echo "Coverage tests completed"
+		-o $(BUILD_DIR)/$(TOP_MODULE)_verilator || exit 1
+	$(BUILD_DIR)/obj_dir/V$(TOP_MODULE) +trace || exit 1
+	@echo "Coverage analysis completed successfully!"
 
 # Waveform viewing
 .PHONY: waves
-waves: $(WAVES_DIR)
+waves: validate_simulator $(WAVES_DIR)
 	@echo "Opening waveform viewer..."
-	@echo "Waveform files available in $(WAVES_DIR)/"
-
-# Coverage analysis
-.PHONY: coverage
-coverage: $(COVERAGE_DIR)
-	@echo "Generating coverage report..."
-	@echo "Coverage reports available in $(COVERAGE_DIR)/"
+	@if [ -f "$(BUILD_DIR)/$(TOP_MODULE).vcd" ]; then \
+		gtkwave $(BUILD_DIR)/$(TOP_MODULE).vcd || echo "GTKWave not available"; \
+	elif [ -f "$(BUILD_DIR)/obj_dir/$(TOP_MODULE).vcd" ]; then \
+		gtkwave $(BUILD_DIR)/obj_dir/$(TOP_MODULE).vcd || echo "GTKWave not available"; \
+	else \
+		echo "No waveform file found. Run simulation first."; \
+	fi
 
 # Linting
 .PHONY: lint
 lint:
 	@echo "Running Verilator linting..."
-	$(VERILATOR) --lint-only $(RTL_FILES)
+	$(VERILATOR) --lint-only --Wall --Wno-fatal --Wno-EOFNEWLINE --Wno-DECLFILENAME --Wno-UNUSEDSIGNAL --Wno-TIMESCALEMOD --Wno-PKGNODECL --Wno-NEEDTIMINGOPT $(RTL_FILES) $(TB_FILES)
 
-# Clean targets
+# Clean target
 .PHONY: clean
 clean:
+	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
 	rm -rf $(WAVES_DIR)
 	rm -rf $(COVERAGE_DIR)
-	rm -rf $(COCOTB_DIR)/__pycache__
-	rm -rf $(COCOTB_DIR)/sim_build
 	rm -rf work
 	rm -rf transcript
 	rm -rf *.vcd
 	rm -rf *.vvp
 	rm -rf *.log
+	@echo "Clean completed successfully!"
 
-# Check testbench dependencies
+# Check dependencies
 .PHONY: check-deps
 check-deps:
 	@echo "Checking testbench dependencies..."
 	@which $(VERILATOR) || echo "Verilator not found"
 	@which $(ICARUS) || echo "Icarus Verilog not found"
-	@which $(VCS) || echo "VCS not found"
-	@which $(MODELSIM) || echo "ModelSim not found"
-	@python3 -c "import cocotb" || echo "Cocotb not found"
+	@which $(VVP) || echo "VVP not found"
+	@which gtkwave || echo "GTKWave not found (optional)"
+
+.PHONY: help compile run test_basic test_random test_all coverage waves lint clean check-deps
 

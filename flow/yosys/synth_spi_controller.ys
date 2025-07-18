@@ -1,0 +1,31 @@
+# Yosys synthesis script for SPI Controller ASIC
+# Optimized for SkyWater 130nm process
+
+# Read RTL files
+read_verilog -sv ../../rtl/spi_controller.sv
+read_verilog -sv ../../rtl/spi_fifo.sv
+read_verilog -sv ../../rtl/spi_protocol_engine.sv
+
+# Set top module
+hierarchy -top spi_controller
+
+# Check design
+check
+
+# Generic synthesis for ASIC
+synth -top spi_controller -flatten
+
+# Technology mapping to standard cells (generic)
+abc -script +strash;scorr;ifraig;retime,{D};strash;dch,-f;map,-M,1,{D}
+
+# Clean up
+clean
+
+# Write synthesized netlist
+write_verilog spi_controller_synth.v
+
+# Write JSON for further processing
+write_json spi_controller_synth.json
+
+# Generate statistics
+stat 

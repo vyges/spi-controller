@@ -1,206 +1,247 @@
-#=============================================================================
-# SPI Controller Makefile
-#=============================================================================
-# Main build system for SPI Controller IP block
-# Supports simulation, synthesis, and testing across multiple platforms
-#
-# Author: Shivaram Mysore
-# License: Apache-2.0
-#=============================================================================
+#==============================================================================
+# SPI Controller Testbench Master Makefile
+#==============================================================================
+# Description: Master Makefile for running all testbench types (SystemVerilog,
+#              and cocotb) with various simulators.
+# Author:      Vyges Team
+# Date:        2025-07-17
+# Version:     1.0.0
+#==============================================================================
 
-# Project configuration
-PROJECT_NAME := spi_controller
-TOP_MODULE := spi_controller
-RTL_DIR := rtl
-TB_DIR := tb
-FLOW_DIR := flow
-TEST_DIR := test
-DOCS_DIR := docs
+# Defaults
+TESTBENCH_TYPE ?= sv
+SIM ?= icarus
 
-# Tool configuration
-VERILATOR := verilator
-ICARUS := iverilog
-VCS := vcs
-VIVADO := vivado
-QUARTUS := quartus
-OPENLANE := openlane
+# Available testbench types
+TB_TYPES = sv cocotb
 
-# Simulation configuration
-SIM_DIR := sim
-COVERAGE_DIR := coverage
-WAVEFORM_DIR := waveforms
-
-# Default target
-.PHONY: all
-all: help
+# Available simulators (open-source only)
+SV_SIMS = icarus verilator
+COCOTB_SIMS = icarus verilator
 
 # Help target
-.PHONY: help
 help:
-	@echo "SPI Controller Build System"
-	@echo "=========================="
+	@echo "SPI Controller Testbench Master Makefile"
+	@echo "========================================"
 	@echo ""
-	@echo "Simulation Targets:"
-	@echo "  sim-verilator     - Run Verilator simulation"
-	@echo "  sim-icarus        - Run Icarus Verilog simulation"
-	@echo "  sim-cocotb        - Run Cocotb simulation"
-	@echo "  sim-all           - Run all simulations"
+	@echo "Available testbench types (set TESTBENCH_TYPE=<type>):"
+	@echo "  sv      - SystemVerilog testbench (default)"
+	@echo "  cocotb  - Cocotb testbench"
 	@echo ""
-	@echo "Synthesis Targets:"
-	@echo "  synth-vivado      - Synthesize with Vivado"
-	@echo "  synth-quartus     - Synthesize with Quartus"
-	@echo "  synth-openlane    - Synthesize with OpenLane (ASIC)"
+	@echo "Available simulators by testbench type:"
+	@echo "  SystemVerilog: $(SV_SIMS)"
+	@echo "  Cocotb:        $(COCOTB_SIMS)"
 	@echo ""
-	@echo "Testing Targets:"
-	@echo "  test-all          - Run all tests"
-	@echo "  test-verilator    - Run Verilator tests"
-	@echo "  test-cocotb       - Run Cocotb tests"
+	@echo "Usage examples:"
+	@echo "  make test_basic                    # Run basic test with default settings"
+	@echo "  make test_all                      # Run all tests with default settings"
+	@echo "  make test_all TESTBENCH_TYPE=cocotb SIM=verilator"
+	@echo "  make clean                         # Clean all testbench artifacts"
+	@echo "  make help                          # Show this help message"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  docs              - Generate documentation"
+	@echo "Individual testbench directories:"
+	@echo "  sv_tb/     - SystemVerilog testbench"
+	@echo "  cocotb/    - Cocotb testbench"
 	@echo ""
-	@echo "Cleanup:"
-	@echo "  clean             - Clean build artifacts"
-	@echo "  clean-all         - Clean everything"
+	@echo "FPGA Synthesis targets:"
+	@echo "  fpga_synth   - Run FPGA synthesis"
+	@echo "  fpga_analysis - Generate FPGA analysis report"
+	@echo "  fpga_report   - Generate comprehensive FPGA report"
+	@echo "  fpga_clean    - Clean FPGA synthesis artifacts"
+	@echo "  fpga_all      - Run all FPGA tasks (synthesis + analysis + report)"
 
-# Create directories
-$(SIM_DIR):
-	mkdir -p $(SIM_DIR)
+# Validation functions
+validate_testbench_type:
+	@if [ "$(filter $(TESTBENCH_TYPE),$(TB_TYPES))" = "" ]; then \
+		echo "Error: Invalid TESTBENCH_TYPE '$(TESTBENCH_TYPE)'. Valid types: $(TB_TYPES)"; \
+		exit 1; \
+	fi
 
-$(COVERAGE_DIR):
-	mkdir -p $(COVERAGE_DIR)
-
-$(WAVEFORM_DIR):
-	mkdir -p $(WAVEFORM_DIR)
-
-# Verilator simulation
-.PHONY: sim-verilator
-sim-verilator: $(SIM_DIR)
-	@echo "Running Verilator simulation..."
-	$(VERILATOR) --cc --exe --build \
-		--trace \
-		--coverage \
-		--assert \
-		--lint-only \
-		-CFLAGS "-std=c++11" \
-		$(RTL_DIR)/$(TOP_MODULE).sv \
-		$(RTL_DIR)/spi_fifo.sv \
-		$(RTL_DIR)/spi_protocol_engine.sv \
-		$(TB_DIR)/sv_tb/tb_$(TOP_MODULE).sv \
-		-o $(SIM_DIR)/$(TOP_MODULE)_verilator
-	$(SIM_DIR)/obj_dir/V$(TOP_MODULE) +trace
-
-# Icarus Verilog simulation
-.PHONY: sim-icarus
-sim-icarus: $(SIM_DIR)
-	@echo "Running Icarus Verilog simulation..."
-	$(ICARUS) -g2012 -o $(SIM_DIR)/$(TOP_MODULE)_icarus \
-		$(RTL_DIR)/$(TOP_MODULE).sv \
-		$(RTL_DIR)/spi_fifo.sv \
-		$(RTL_DIR)/spi_protocol_engine.sv \
-		$(TB_DIR)/sv_tb/tb_$(TOP_MODULE).sv
-	vvp $(SIM_DIR)/$(TOP_MODULE)_icarus
-
-# Cocotb simulation
-.PHONY: sim-cocotb
-sim-cocotb: $(SIM_DIR)
-	@echo "Running Cocotb simulation..."
-	cd $(TB_DIR)/cocotb && \
-	SIM=verilator COCOTB_REDUCED_LOG_FMT=1 make
-
-# Run all simulations
-.PHONY: sim-all
-sim-all: sim-verilator sim-icarus sim-cocotb
-
-# Vivado synthesis
-.PHONY: synth-vivado
-synth-vivado:
-	@echo "Running Vivado synthesis..."
-	cd $(FLOW_DIR)/vivado && \
-	$(VIVADO) -mode batch -source synthesis.tcl
-
-# Quartus synthesis
-.PHONY: synth-quartus
-synth-quartus:
-	@echo "Running Quartus synthesis..."
-	cd $(FLOW_DIR)/quartus && \
-	$(QUARTUS) --64bit -t quartus_project.tcl
-
-# OpenLane synthesis (ASIC)
-.PHONY: synth-openlane
-synth-openlane:
-	@echo "Running OpenLane synthesis..."
-	cd $(FLOW_DIR)/openlane && \
-	$(OPENLANE) --flow run --config config_sky130b.json
+validate_simulator:
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			if [ "$(filter $(SIM),$(SV_SIMS))" = "" ]; then \
+				echo "Error: Simulator '$(SIM)' not supported for SystemVerilog testbench"; \
+				echo "Supported simulators: $(SV_SIMS)"; \
+				exit 1; \
+			fi \
+			;; \
+		cocotb) \
+			if [ "$(filter $(SIM),$(COCOTB_SIMS))" = "" ]; then \
+				echo "Error: Simulator '$(SIM)' not supported for Cocotb testbench"; \
+				echo "Supported simulators: $(COCOTB_SIMS)"; \
+				exit 1; \
+			fi \
+			;; \
+	esac
 
 # Test targets
-.PHONY: test-all
-test-all: test-verilator test-cocotb
+test_basic: validate_testbench_type validate_simulator
+	@echo "Running basic test with $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) test_basic SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) test_basic SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "Basic test completed successfully!"
 
-.PHONY: test-verilator
-test-verilator: sim-verilator
-	@echo "Verilator tests completed"
+test_random: validate_testbench_type validate_simulator
+	@echo "Running random test with $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) test_random SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) test_random SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "Random test completed successfully!"
 
-.PHONY: test-cocotb
-test-cocotb: sim-cocotb
-	@echo "Cocotb tests completed"
+test_all: validate_testbench_type validate_simulator
+	@echo "Running all tests with $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) test_all SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) test_all SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "All tests completed successfully!"
 
-# Documentation generation
-.PHONY: docs
-docs:
-	@echo "Generating documentation..."
-	@echo "Documentation is available in $(DOCS_DIR)/"
+coverage: validate_testbench_type validate_simulator
+	@if [ "$(SIM)" != "verilator" ]; then \
+		echo "Error: Coverage only supported with Verilator simulator"; \
+		exit 1; \
+	fi
+	@echo "Running coverage with $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) coverage SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) coverage SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "Coverage completed successfully!"
 
-# Linting
-.PHONY: lint
-lint:
-	@echo "Running Verilator linting..."
-	$(VERILATOR) --lint-only \
-		$(RTL_DIR)/$(TOP_MODULE).sv \
-		$(RTL_DIR)/spi_fifo.sv \
-		$(RTL_DIR)/spi_protocol_engine.sv
+gui: validate_testbench_type validate_simulator
+	@if [ "$(SIM)" != "verilator" ]; then \
+		echo "Error: GUI only supported with Verilator simulator"; \
+		exit 1; \
+	fi
+	@echo "GUI target not implemented for current simulators"
 
-# Coverage collection
-.PHONY: coverage
-coverage: $(COVERAGE_DIR)
-	@echo "Collecting coverage..."
-	@echo "Coverage reports available in $(COVERAGE_DIR)/"
+# Waveform viewing
+waves: validate_testbench_type validate_simulator
+	@echo "Viewing waveforms for $(TESTBENCH_TYPE) testbench..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) waves SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) waves SIM=$(SIM) || exit 1; \
+			;; \
+	esac
 
-# Clean targets
-.PHONY: clean
+# Compile target
+compile: validate_testbench_type validate_simulator
+	@echo "Compiling $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) compile SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) compile SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "Compilation completed successfully!"
+
+# Run target
+run: validate_testbench_type validate_simulator
+	@echo "Running $(TESTBENCH_TYPE) testbench using $(SIM) simulator..."
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) \
+			cd tb/sv_tb && $(MAKE) run SIM=$(SIM) || exit 1; \
+			;; \
+		cocotb) \
+			cd tb/cocotb && $(MAKE) run SIM=$(SIM) || exit 1; \
+			;; \
+	esac
+	@echo "Simulation completed successfully!"
+
+# Clean target
 clean:
-	rm -rf $(SIM_DIR)/obj_dir
-	rm -rf $(SIM_DIR)/*.vcd
-	rm -rf $(SIM_DIR)/*.vvp
-	rm -rf $(COVERAGE_DIR)/*
-	rm -rf $(WAVEFORM_DIR)/*
+	@echo "Cleaning all testbench artifacts..."
+	@for tb_type in $(TB_TYPES); do \
+		if [ -d "tb/$$tb_type"_tb ]; then \
+			cd tb/$$tb_type"_tb" && $(MAKE) clean && cd ../..; \
+		fi; \
+		if [ -d "tb/$$tb_type" ]; then \
+			cd tb/$$tb_type && $(MAKE) clean 2>/dev/null || echo "Warning: Could not clean $$tb_type directory"; \
+			cd ../..; \
+		fi; \
+	done
+	@echo "Clean completed successfully!"
 
-.PHONY: clean-all
-clean-all: clean
-	rm -rf $(FLOW_DIR)/vivado/spi_controller
-	rm -rf $(FLOW_DIR)/quartus/spi_controller
-	rm -rf $(FLOW_DIR)/openlane/runs
-	rm -rf $(TB_DIR)/cocotb/__pycache__
-	rm -rf $(TB_DIR)/cocotb/sim_build
+# Test all testbench types
+test_all_types:
+	@echo "Testing all testbench types..."
+	@for tb_type in $(TB_TYPES); do \
+		echo "Testing $$tb_type testbench..."; \
+		$(MAKE) test_basic TESTBENCH_TYPE=$$tb_type SIM=icarus || exit 1; \
+	done
+	@echo "All testbench types tested successfully!"
 
-# Install dependencies (for development)
-.PHONY: install-deps
-install-deps:
-	@echo "Installing development dependencies..."
-	@echo "Please install:"
-	@echo "  - Verilator"
-	@echo "  - Icarus Verilog"
-	@echo "  - Cocotb"
-	@echo "  - Vivado (Xilinx)"
-	@echo "  - Quartus (Intel)"
-	@echo "  - OpenLane (ASIC)"
+# Performance comparison
+benchmark:
+	@echo "Running performance benchmark..."
+	@echo "SystemVerilog testbench:"
+	@time $(MAKE) test_basic TESTBENCH_TYPE=sv SIM=icarus > /dev/null 2>&1
+	@echo "Cocotb testbench:"
+	@time $(MAKE) test_basic TESTBENCH_TYPE=cocotb SIM=icarus > /dev/null 2>&1
+	@echo "Benchmark completed!"
 
-# Check tools
-.PHONY: check-tools
-check-tools:
-	@echo "Checking required tools..."
-	@which $(VERILATOR) || echo "Verilator not found"
-	@which $(ICARUS) || echo "Icarus Verilog not found"
-	@which $(VIVADO) || echo "Vivado not found"
-	@which $(QUARTUS) || echo "Quartus not found"
-	@which $(OPENLANE) || echo "OpenLane not found" 
+# FPGA Synthesis targets
+fpga_synth:
+	@echo "Running FPGA synthesis..."
+	@cd flow/fpga && $(MAKE) all || exit 1
+	@echo "FPGA synthesis completed successfully!"
+
+fpga_analysis:
+	@echo "Running FPGA analysis..."
+	@cd flow/fpga && $(MAKE) fpga_analysis || exit 1
+	@echo "FPGA analysis completed successfully!"
+
+fpga_report:
+	@echo "Generating comprehensive FPGA report..."
+	@cd flow/fpga && $(MAKE) comprehensive_report || exit 1
+	@echo "FPGA report generation completed successfully!"
+
+fpga_clean:
+	@echo "Cleaning FPGA synthesis artifacts..."
+	@cd flow/fpga && $(MAKE) clean || exit 1
+	@echo "FPGA clean completed successfully!"
+
+# All-in-one FPGA target
+fpga_all: fpga_synth fpga_analysis fpga_report
+	@echo "All FPGA tasks completed successfully!"
+
+# Status target
+status:
+	@echo "Testbench Status:"
+	@echo "================="
+	@echo "Testbench Type: $(TESTBENCH_TYPE)"
+	@echo "Simulator: $(SIM)"
+	@echo ""
+	@echo "Available testbench types: $(TB_TYPES)"
+	@echo "Available simulators for $(TESTBENCH_TYPE):"
+	@case "$(TESTBENCH_TYPE)" in \
+		sv) echo "  $(SV_SIMS)" ;; \
+		cocotb) echo "  $(COCOTB_SIMS)" ;; \
+	esac
+
+.PHONY: help test_basic test_random test_all coverage gui waves compile run clean test_all_types benchmark status 

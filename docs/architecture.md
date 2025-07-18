@@ -1,39 +1,55 @@
-# Architecture: Countdown Timer IP
+# Architecture: SPI Controller IP
 
 ## Overview
 
-This document describes the internal architecture, APB interface, and design details of the `your_ip_block` 16-bit countdown timer. The module is parameterizable and supports both **periodic** and **one-shot** modes.
+This document describes the internal architecture, APB interface, and design details of the SPI Controller IP block. The module provides a configurable Serial Peripheral Interface (SPI) master controller with APB interface, supporting multiple SPI modes, FIFO buffering, and interrupt capabilities.
 
 ---
 
 ## Block Diagram
 
 ```
-
-```
-             +--------------------+
-```
-
-clk --------->|                    |
-rst\_n ------->|  Countdown Timer   |
-psel -------->|                    |
-penable ----->|     APB Slave      |
-pwrite ------>|                    |--> irq
-paddr  ------>|                    |
-pwdata ------>|                    |
-\|                    |--> prdata
-+--------------------+
-
+                    +------------------------------------------+
+                    |              SPI Controller              |
+                    |                                          |
+                    |  +-------------+    +----------------+   |
+                    |  |    APB      |    |     Control    |   |
+                    |  |  Interface  |◀──▶|   Registers    |   |
+                    |  |             |    |                |   |
+                    |  +-------------+    +----------------+   |
+                    |         │                   │            |
+                    |         ▼                   ▼            |
+                    |  +-------------+    +----------------+   |
+                    |  |     TX      |    |      RX        |   |
+                    |  |    FIFO     |    |     FIFO       |   |
+                    |  |             |    |                |   |
+                    |  +-------------+    +----------------+   |
+                    |         │                   │            |
+                    |         ▼                   ▼            |
+                    |  +-------------+    +----------------+   |
+                    |  |   SPI       |    |   Interrupt    |   |
+                    |  | Protocol    |    |  Controller    |   |
+                    |  | Engine      |    |                |   |
+                    |  +-------------+    +----------------+   |
+                    |         │                   │            |
+                    |         └───────────────────┘            |
+                    |                   │                      |
+                    |            +-------------+               |
+                    |            |   SPI       |               |
+                    |            | Interface   |               |
+                    |            +-------------+               |
+                    +------------------------------------------+
 ```
 
 ---
 
 ## Parameters
 
-| Parameter   | Type | Default | Description                        |
-|-------------|------|---------|------------------------------------|
-| `WIDTH`     | int  | 16      | Bit-width of the countdown value   |
-| `ONE_SHOT`  | bit  | 0       | 1 = one-shot mode, 0 = periodic     |
+| Parameter     | Type | Default | Description                        |
+|---------------|------|---------|------------------------------------|
+| `FIFO_DEPTH`  | int  | 16      | FIFO depth (4-64 entries)          |
+| `DATA_WIDTH`  | int  | 8       | Data width (8, 16, or 32 bits)     |
+| `BAUD_DIV`    | int  | 10      | Default baud rate divider          |
 
 ---
 
@@ -41,14 +57,28 @@ pwdata ------>|                    |
 
 | Signal     | Direction | Width  | Description                        |
 |------------|-----------|--------|------------------------------------|
-| `psel`     | input     | 1      | APB select                         |
-| `penable`  | input     | 1      | APB enable                         |
-| `pwrite`   | input     | 1      | APB write enable                   |
-| `paddr`    | input     | 16     | APB address                        |
-| `pwdata`   | input     | 32     | Write data                         |
-| `prdata`   | output    | 32     | Read data                          |
-| `pready`   | output    | 1      | Ready handshake                    |
-| `irq`      | output    | 1      | Interrupt when count reaches zero |
+| `pclk_i`   | input     | 1      | APB clock                          |
+| `presetn_i`| input     | 1      | APB reset (active low)             |
+| `psel_i`   | input     | 1      | APB select                         |
+| `penable_i`| input     | 1      | APB enable                         |
+| `pwrite_i` | input     | 1      | APB write enable                   |
+| `paddr_i`  | input     | 8      | APB address                        |
+| `pwdata_i` | input     | 32     | Write data                         |
+| `prdata_o` | output    | 32     | Read data                          |
+| `pready_o` | output    | 1      | Ready handshake                    |
+| `pslverr_o`| output    | 1      | Slave error                        |
+
+---
+
+## SPI Interface
+
+| Signal        | Direction | Width  | Description                        |
+|---------------|-----------|--------|------------------------------------|
+| `spi_clk_o`   | output    | 1      | SPI clock output                   |
+| `spi_mosi_o`  | output    | 1      | SPI master out, slave in           |
+| `spi_miso_i`  | input     | 1      | SPI master in, slave out           |
+| `spi_csn_o`   | output    | 1      | SPI chip select (active low)       |
+| `spi_irq_o`   | output    | 1      | SPI interrupt output               |
 
 ---
 
@@ -56,31 +86,52 @@ pwdata ------>|                    |
 
 | Address   | Name          | Access | Description                         |
 |-----------|---------------|--------|-------------------------------------|
-| `0x00`    | `LOAD`        | W      | Set countdown value                 |
-| `0x04`    | `VALUE`       | R      | Current countdown value             |
-| `0x08`    | `CONTROL`     | RW     | Start, mode config, clear interrupt |
-| `0x0C`    | `STATUS`      | R      | IRQ pending, done flag              |
+| `0x00`    | `CTRL`        | R/W    | Control register                    |
+| `0x04`    | `STAT`        | R      | Status register                     |
+| `0x08`    | `TXDATA`      | W      | TX data register                    |
+| `0x0C`    | `RXDATA`      | R      | RX data register                    |
+| `0x10`    | `BAUD`        | R/W    | Baud rate configuration             |
+| `0x14`    | `FIFO`        | R/W    | FIFO configuration                  |
+| `0x18`    | `INT`         | R/W    | Interrupt configuration             |
+| `0x1C`    | `MODE`        | R/W    | SPI mode configuration              |
 
 ---
 
 ## Internal Modules
 
-- **Timer Core**: Decrements internal counter every clock cycle.
-- **Control Logic**: Handles start/restart logic and IRQ generation.
-- **APB Interface**: Implements APB3 slave protocol with `pready` and `prdata`.
+- **APB Interface**: Implements APB3 slave protocol with register access
+- **Control Registers**: Manages configuration and control bits
+- **TX FIFO**: Buffers transmit data with configurable depth
+- **RX FIFO**: Buffers receive data with configurable depth
+- **SPI Protocol Engine**: Implements all 4 SPI modes with configurable timing
+- **Interrupt Controller**: Manages interrupt generation and clearing
 
 ---
 
-## Modes
+## SPI Modes
 
-- **Periodic Mode**: Automatically reloads the `LOAD` value on expiry.
-- **One-Shot Mode**: Stops counting after reaching zero and sets `irq`.
+- **Mode 0**: CPOL=0, CPHA=0 (clock idle low, data sampled on rising edge)
+- **Mode 1**: CPOL=0, CPHA=1 (clock idle low, data sampled on falling edge)
+- **Mode 2**: CPOL=1, CPHA=0 (clock idle high, data sampled on falling edge)
+- **Mode 3**: CPOL=1, CPHA=1 (clock idle high, data sampled on rising edge)
+
+---
+
+## Data Flow
+
+1. **Transmit Path**: APB write → TX FIFO → SPI Protocol Engine → SPI Interface
+2. **Receive Path**: SPI Interface → SPI Protocol Engine → RX FIFO → APB read
+3. **Control Path**: APB register access → Control logic → Module configuration
+4. **Interrupt Path**: Status monitoring → Interrupt controller → Interrupt output
 
 ---
 
 ## Notes
 
-- Reset (`rst_n`) clears the counter and control logic.
-- The IRQ signal is level-high and should be cleared via a CONTROL register write.
+- All registers are 32 bits wide
+- FIFO depth is configurable from 4 to 64 entries
+- Data width supports 8, 16, and 32-bit transfers
+- Interrupts are level-sensitive and require software clearing
+- Reset clears all registers and FIFOs to known state
 
 ---
