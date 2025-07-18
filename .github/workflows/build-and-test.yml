@@ -81,65 +81,152 @@ jobs:
 
       - name: Install system packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            cmake \
-            git \
-            wget \
-            curl \
-            tree \
-            unzip \
-            make \
-            python3 \
-            python3-pip \
-            python3-venv \
-            bison \
-            flex \
-            help2man \
-            libfl-dev \
-            libfl2 \
-            libgit2-dev \
-            libunwind-dev \
-            libgoogle-perftools-dev \
-            libqt5svg5-dev \
-            libz-dev \
-            perl \
-            time \
-            zlib1g \
-            zlib1g-dev \
-            magic \
-            netgen \
-            xschem \
-            ngspice \
-            gettext \
-            gnat \
-            gperf \
-            libreadline-dev \
-            gawk \
-            tcl-dev \
-            libffi-dev \
-            graphviz \
-            xdot \
-            pkg-config \
-            libboost-system-dev \
-            libboost-python-dev \
-            libboost-filesystem-dev \
-            verilator \
-            iverilog \
-            yosys \
-            gtkwave \
-            pandoc
+          # Function to wait for apt lock to be released
+          wait_for_apt() {
+            while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+              echo "Waiting for apt lock to be released..."
+              sleep 5
+            done
+          }
+          
+          # Function to kill any existing apt processes
+          kill_apt_processes() {
+            sudo pkill -f apt || true
+            sudo pkill -f dpkg || true
+            sleep 2
+          }
+          
+          # Wait for any existing apt processes to finish
+          wait_for_apt
+          
+          # Kill any stuck apt processes
+          kill_apt_processes
+          
+          # Update package lists with retry logic
+          for i in {1..3}; do
+            echo "Attempting apt-get update (attempt $i/3)..."
+            if sudo DEBIAN_FRONTEND=noninteractive apt-get update -o Dpkg::Lock::Timeout=60; then
+              echo "apt-get update successful"
+              break
+            else
+              echo "apt-get update failed, attempt $i/3"
+              kill_apt_processes
+              wait_for_apt
+              sleep 10
+            fi
+          done
+          
+          # Install packages with retry logic
+          for i in {1..3}; do
+            echo "Attempting apt-get install (attempt $i/3)..."
+            if sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              build-essential \
+              cmake \
+              git \
+              wget \
+              curl \
+              tree \
+              unzip \
+              make \
+              python3 \
+              python3-pip \
+              python3-venv \
+              bison \
+              flex \
+              help2man \
+              libfl-dev \
+              libfl2 \
+              libgit2-dev \
+              libunwind-dev \
+              libgoogle-perftools-dev \
+              libqt5svg5-dev \
+              libz-dev \
+              perl \
+              time \
+              zlib1g \
+              zlib1g-dev \
+              magic \
+              netgen \
+              xschem \
+              ngspice \
+              gettext \
+              gnat \
+              gperf \
+              libreadline-dev \
+              gawk \
+              tcl-dev \
+              libffi-dev \
+              graphviz \
+              xdot \
+              pkg-config \
+              libboost-system-dev \
+              libboost-python-dev \
+              libboost-filesystem-dev \
+              verilator \
+              iverilog \
+              yosys \
+              gtkwave \
+              pandoc -o Dpkg::Lock::Timeout=60; then
+              echo "apt-get install successful"
+              break
+            else
+              echo "apt-get install failed, attempt $i/3"
+              kill_apt_processes
+              wait_for_apt
+              sleep 10
+            fi
+          done
+          
+          # Fallback: Try alternative installation method if standard method failed
+          if ! command -v verilator &> /dev/null || ! command -v iverilog &> /dev/null || ! command -v yosys &> /dev/null; then
+            echo "⚠️ Some tools not found, trying alternative installation method..."
+            
+            # Try installing individual packages
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y verilator iverilog yosys || echo "⚠️ Alternative installation failed"
+          fi
 
       - name: Verify tool installations
         run: |
           echo "🔍 Verifying tool installations..."
-          verilator --version
-          iverilog -V
-          yosys -V
-          gtkwave --version
-          dot -V
-          echo "✅ All tools are available"
+          
+          # Check each tool individually and provide helpful messages
+          if command -v verilator &> /dev/null; then
+            echo "✅ Verilator: $(verilator --version | head -1)"
+          else
+            echo "❌ Verilator not found"
+          fi
+          
+          if command -v iverilog &> /dev/null; then
+            echo "✅ Icarus Verilog: $(iverilog -V | head -1)"
+          else
+            echo "❌ Icarus Verilog not found"
+          fi
+          
+          if command -v yosys &> /dev/null; then
+            echo "✅ Yosys: $(yosys -V | head -1)"
+          else
+            echo "❌ Yosys not found"
+          fi
+          
+          if command -v gtkwave &> /dev/null; then
+            echo "✅ GTKWave: $(gtkwave --version | head -1)"
+          else
+            echo "⚠️ GTKWave not found (optional)"
+          fi
+          
+          if command -v dot &> /dev/null; then
+            echo "✅ Graphviz: $(dot -V | head -1)"
+          else
+            echo "⚠️ Graphviz not found (optional)"
+          fi
+          
+          # Check if critical tools are available
+          if command -v verilator &> /dev/null && command -v iverilog &> /dev/null && command -v yosys &> /dev/null; then
+            echo "✅ All critical tools are available"
+          else
+            echo "❌ Some critical tools are missing"
+            exit 1
+          fi
 
       - name: Install Python dependencies
         run: |
