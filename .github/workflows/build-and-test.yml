@@ -477,16 +477,21 @@ jobs:
             echo "Generating comprehensive report..."
             make comprehensive_report || echo "⚠️ Report generation failed"
             
-            # Copy reports to public directory
-            mkdir -p ../../public
-            cp -r reports/* ../../public/ || echo "⚠️ Failed to copy reports"
+            # Copy reports to public directory with proper structure
+            mkdir -p ../../public/asic
+            cp comprehensive_report.md ../../public/asic/ || true
+            cp gate_analysis_report.md ../../public/asic/ || true
+            cp synthesis_report.md ../../public/asic/ || true
             
             cd ../..
           else
-            echo "ℹ️ No Yosys configuration found for ASIC synthesis"
+            echo "⚠️ No Yosys configuration found for ASIC"
+            mkdir -p public/asic
+            echo "# ASIC Synthesis Report" > public/asic/README.md
+            echo "No ASIC synthesis configuration found." >> public/asic/README.md
           fi
           
-          echo "✅ ASIC synthesis test execution complete"
+          echo "✅ ASIC synthesis complete"
 
       - name: Run FPGA synthesis
         if: (github.event.inputs.test_synthesis == 'true' || github.event_name != 'workflow_dispatch') && (github.event.inputs.target_platform == 'fpga' || github.event.inputs.target_platform == 'both' || github.event_name != 'workflow_dispatch')
@@ -494,60 +499,209 @@ jobs:
           echo "🔧 Running FPGA synthesis..."
           
           if [ -d "flow/fpga" ]; then
-            echo "✅ Found FPGA configuration"
+            echo "✅ Found Yosys configuration for FPGA"
             cd flow/fpga
             
             # Run FPGA synthesis
             echo "Running FPGA synthesis..."
             make all || echo "⚠️ FPGA synthesis failed"
             
-            # Generate FPGA analysis
-            echo "Generating FPGA analysis..."
+            # Run FPGA analysis
+            echo "Running FPGA analysis..."
             make fpga_analysis || echo "⚠️ FPGA analysis failed"
             
-            # Generate comprehensive FPGA report
+            # Generate comprehensive report
             echo "Generating comprehensive FPGA report..."
             make comprehensive_report || echo "⚠️ FPGA report generation failed"
             
+            # Copy reports to public directory with proper structure
+            mkdir -p ../../public/fpga
+            cp comprehensive_fpga_report.md ../../public/fpga/ || true
+            cp fpga_resource_analysis_report.md ../../public/fpga/ || true
+            
             cd ../..
           else
-            echo "ℹ️ No FPGA configuration found"
+            echo "⚠️ No Yosys configuration found for FPGA"
+            mkdir -p public/fpga
+            echo "# FPGA Synthesis Report" > public/fpga/README.md
+            echo "No FPGA synthesis configuration found." >> public/fpga/README.md
           fi
           
-          echo "✅ FPGA synthesis test execution complete"
+          echo "✅ FPGA synthesis complete"
 
-      # Documentation generation
-      - name: Generate documentation
+      # Upload artifacts
+      - name: Upload Synthesis Reports as Artifacts
+        if: github.event.inputs.test_synthesis == 'true' || github.event_name != 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthesis-reports
+          path: |
+            public/asic/
+            public/fpga/
+
+      # Generate comprehensive test harness report
+      - name: Generate test harness report
+        if: always()
         run: |
-          echo "📚 Generating documentation..."
+          echo "📊 Generating comprehensive test harness report..."
           
-          # Create public directory for artifacts
+          # Create standard footer for all HTML pages first
           mkdir -p public
+          cat > public/vyges-footer.html << 'EOF'
+          <div class="vyges-footer">
+              <p>This report was automatically generated.</p>
+              <p>Copyright (c) 2025 Vyges, Inc. All rights reserved.</p>
+              <p>Powered by Vyges - Build Silicon Like Software</p>
+              <p><strong>Build IP Not Boilerplate</strong></p>
+          </div>
+          EOF
           
-          # Generate project overview
-          echo "# SPI Controller IP Documentation" > public/README.md
-          echo "" >> public/README.md
-          echo "Generated on: $(date)" >> public/README.md
-          echo "" >> public/README.md
+          echo "🔍 Debug: Current directory: $(pwd)"
+          echo "🔍 Debug: Directory structure:"
+          tree public/ || find public/ -type f
+          echo "🔍 Debug: Footer file exists: $(ls -la public/vyges-footer.html)"
           
-          # Add project structure
-          echo "## Project Structure" >> public/README.md
-          echo "" >> public/README.md
-          tree -I 'node_modules|.git|target|build|*.vcd|*.vvp|*.log' --dirsfirst >> public/README.md || echo "⚠️ Tree command failed"
+          python3 generate_test_harness_report.py
           
-          # Add RTL file list
-          echo "" >> public/README.md
-          echo "## RTL Files" >> public/README.md
-          echo "" >> public/README.md
-          find rtl -name "*.sv" -o -name "*.v" | sort >> public/README.md
+          # Copy report to public directory for GitHub Pages
+          if [ -f "test_harness_report.md" ]; then
+            cp test_harness_report.md public/
+            echo "✅ Test harness report generated and copied to public directory"
           
-          # Add testbench file list
-          echo "" >> public/README.md
-          echo "## Testbench Files" >> public/README.md
-          echo "" >> public/README.md
-          find tb -name "*.sv" -o -name "*.v" -o -name "*.py" | sort >> public/README.md
+          # Convert markdown reports to HTML with styling
+          echo "🔄 Converting markdown reports to HTML..."
           
-          echo "✅ Documentation generation complete"
+          # Create CSS for HTML reports
+          cat > public/report-style.css << 'EOF'
+          <style>
+          body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+              max-width: 1200px; 
+              margin: 0 auto; 
+              padding: 20px; 
+              line-height: 1.6;
+              color: #24292e;
+          }
+          .vyges-footer {
+              background: #f8f9fa;
+              border-top: 1px solid #e1e4e8;
+              padding: 20px 0;
+              margin: 40px -20px -20px -20px;
+              text-align: center;
+              color: #586069;
+          }
+          .vyges-footer p {
+              margin: 5px 0;
+          }
+          .vyges-footer strong {
+              color: #0366d6;
+          }
+          h1 { 
+              color: #0366d6; 
+              border-bottom: 2px solid #e1e4e8; 
+              padding-bottom: 10px; 
+              margin-top: 0;
+          }
+          h2 { 
+              color: #24292e; 
+              margin-top: 30px; 
+              border-bottom: 1px solid #e1e4e8;
+              padding-bottom: 5px;
+          }
+          h3 { 
+              color: #24292e; 
+              margin-top: 25px; 
+          }
+          table { 
+              border-collapse: collapse; 
+              width: 100%; 
+              margin: 20px 0;
+          }
+          th, td { 
+              border: 1px solid #e1e4e8; 
+              padding: 12px; 
+              text-align: left; 
+          }
+          th { 
+              background-color: #f6f8fa; 
+              font-weight: 600;
+          }
+          tr:nth-child(even) { 
+              background-color: #f6f8fa; 
+          }
+          code { 
+              background-color: #f6f8fa; 
+              padding: 2px 4px; 
+              border-radius: 3px; 
+              font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+          }
+          pre { 
+              background-color: #f6f8fa; 
+              padding: 16px; 
+              border-radius: 6px; 
+              overflow-x: auto;
+          }
+          .highlight { 
+              background-color: #fff3cd; 
+              padding: 10px; 
+              border-radius: 4px; 
+              border-left: 4px solid #ffc107;
+          }
+          .success { 
+              background-color: #d4edda; 
+              padding: 10px; 
+              border-radius: 4px; 
+              border-left: 4px solid #28a745;
+          }
+          .error { 
+              background-color: #f8d7da; 
+              padding: 10px; 
+              border-radius: 4px; 
+              border-left: 4px solid #dc3545;
+          }
+          </style>
+          EOF
+          
+
+          
+          # Convert test harness report to HTML
+          if [ -f "public/test_harness_report.md" ]; then
+            pandoc public/test_harness_report.md -o public/test_harness_report.html --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - Test Harness Report" --include-after-body=public/vyges-footer.html
+            echo "✅ Converted test harness report to HTML"
+          fi
+          
+          # Convert ASIC reports to HTML
+          if [ -d "public/asic" ]; then
+            echo "🔍 Debug: Converting ASIC reports from $(pwd)"
+            echo "🔍 Debug: ASIC files: $(ls public/asic/*.md 2>/dev/null || echo 'No ASIC markdown files')"
+            for file in public/asic/*.md; do
+              if [ -f "$file" ]; then
+                basename=$(basename "$file" .md)
+                echo "🔍 Debug: Converting $file to public/asic/${basename}.html"
+                echo "🔍 Debug: Footer path check: $(ls -la public/vyges-footer.html 2>/dev/null || echo 'Footer not found at public/vyges-footer.html')"
+                pandoc "$file" -o "public/asic/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
+                echo "✅ Converted $file to HTML"
+              fi
+            done
+          fi
+          
+          # Convert FPGA reports to HTML
+          if [ -d "public/fpga" ]; then
+            echo "🔍 Debug: Converting FPGA reports from $(pwd)"
+            echo "🔍 Debug: FPGA files: $(ls public/fpga/*.md 2>/dev/null || echo 'No FPGA markdown files')"
+            for file in public/fpga/*.md; do
+              if [ -f "$file" ]; then
+                basename=$(basename "$file" .md)
+                echo "🔍 Debug: Converting $file to public/fpga/${basename}.html"
+                echo "🔍 Debug: Footer path check: $(ls -la public/vyges-footer.html 2>/dev/null || echo 'Footer not found at public/vyges-footer.html')"
+                pandoc "$file" -o "public/fpga/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
+                echo "✅ Converted $file to HTML"
+              fi
+            done
+          fi
+          
+          echo "✅ All markdown reports converted to HTML"
+          fi
 
       # Generate test harness report
       - name: Generate test harness report
@@ -577,11 +731,327 @@ jobs:
             tb/*/coverage/
           retention-days: 30
 
-      # Deploy to gh-pages branch (manual git-based deployment)
-      - name: Deploy to gh-pages branch
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && (github.event.inputs.test_synthesis == 'true' || github.event_name != 'workflow_dispatch')
         run: |
-          echo "🚀 Deploying reports to gh-pages branch..."
+          echo "🚀 Deploying synthesis reports to GitHub Pages..."
+          
+          # Create index.html for GitHub Pages
+          cat > public/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller IP - Reports</title>
+              <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@1,400&display=swap" rel="stylesheet">
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                      max-width: 1200px; 
+                      margin: 0 auto; 
+                      padding: 20px; 
+                      line-height: 1.6;
+                      color: #24292e;
+                  }
+                  h1 { 
+                      color: #0366d6; 
+                      border-bottom: 2px solid #e1e4e8; 
+                      padding-bottom: 10px; 
+                      margin-top: 0;
+                  }
+                  h2 { 
+                      color: #24292e; 
+                      margin-top: 30px; 
+                      border-bottom: 1px solid #e1e4e8;
+                      padding-bottom: 5px;
+                  }
+                  .timestamp { 
+                      color: #586069; 
+                      font-size: 14px; 
+                      margin-bottom: 30px;
+                  }
+                  table { 
+                      border-collapse: collapse; 
+                      width: 100%; 
+                      margin: 20px 0;
+                      background: white;
+                      border-radius: 8px;
+                      overflow: hidden;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                  }
+                  th, td { 
+                      border: 1px solid #e1e4e8; 
+                      padding: 16px; 
+                      text-align: left; 
+                      vertical-align: top;
+                  }
+                  th { 
+                      background-color: #f6f8fa; 
+                      font-weight: 600;
+                      color: #24292e;
+                  }
+                  tr:nth-child(even) { 
+                      background-color: #f8f9fa; 
+                  }
+                  tr:hover { 
+                      background-color: #f1f3f4; 
+                  }
+                  .report-link { 
+                      display: inline-block; 
+                      background: #0366d6; 
+                      color: white; 
+                      padding: 6px 12px; 
+                      text-decoration: none; 
+                      border-radius: 4px; 
+                      margin: 2px 4px 2px 0;
+                      font-size: 12px;
+                      font-weight: 500;
+                  }
+                  .report-link:hover { 
+                      background: #0256cc; 
+                      transform: translateY(-1px);
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  }
+                  .report-link.html { 
+                      background: #28a745; 
+                  }
+                  .report-link.html:hover { 
+                      background: #218838; 
+                  }
+                  .report-link.md { 
+                      background: #6f42c1; 
+                  }
+                  .report-link.md:hover { 
+                      background: #5a32a3; 
+                  }
+                  .category-header {
+                      background: #f6f8fa;
+                      font-weight: 600;
+                      color: #24292e;
+                      border-left: 4px solid #0366d6;
+                  }
+                  .category-header.test-verification {
+                      background: #e3f2fd;
+                      border-left: 4px solid #2196f3;
+                  }
+                  .category-header.asic-synthesis {
+                      background: #f3e5f5;
+                      border-left: 4px solid #9c27b0;
+                  }
+                  .category-header.fpga-synthesis {
+                      background: #e8f5e8;
+                      border-left: 4px solid #4caf50;
+                  }
+                  .test-verification {
+                      background: #f8fbff;
+                  }
+                  .test-verification:nth-child(even) {
+                      background: #f0f8ff;
+                  }
+                  .asic-synthesis {
+                      background: #faf5ff;
+                  }
+                  .asic-synthesis:nth-child(even) {
+                      background: #f3e8ff;
+                  }
+                  .fpga-synthesis {
+                      background: #f5fff5;
+                  }
+                  .fpga-synthesis:nth-child(even) {
+                      background: #e8ffe8;
+                  }
+                  .summary-box {
+                      background: #f8f9fa;
+                      border: 1px solid #e1e4e8;
+                      border-radius: 8px;
+                      padding: 20px;
+                      margin: 20px 0;
+                  }
+                  .summary-box h3 {
+                      margin-top: 0;
+                      color: #0366d6;
+                  }
+                  .summary-list {
+                      list-style: none;
+                      padding: 0;
+                  }
+                  .summary-list li {
+                      padding: 8px 0;
+                      border-bottom: 1px solid #e1e4e8;
+                  }
+                  .summary-list li:last-child {
+                      border-bottom: none;
+                  }
+                  .summary-list strong {
+                      color: #24292e;
+                  }
+                  .vyges-header {
+                      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                      color: white;
+                      padding: 30px 0;
+                      margin: -20px -20px 30px -20px;
+                      text-align: center;
+                      border-radius: 0 0 15px 15px;
+                      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+                      position: relative;
+                      overflow: hidden;
+                  }
+                  .vyges-header::before {
+                      content: '';
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      right: 0;
+                      bottom: 0;
+                      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                                  radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+                      pointer-events: none;
+                  }
+                  .vyges-logo {
+                      font-size: 2.5em;
+                      font-weight: 400;
+                      font-style: italic;
+                      font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      margin-bottom: 10px;
+                      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-wrap: wrap;
+                      position: relative;
+                      z-index: 1;
+                      text-transform: lowercase;
+                  }
+                  .vyges-tagline {
+                      font-size: 1.1em;
+                      opacity: 0.95;
+                      margin-bottom: 0;
+                      font-weight: 400;
+                      letter-spacing: 0.5px;
+                      position: relative;
+                      z-index: 1;
+                  }
+                  .vyges-footer {
+                      background: #f8f9fa;
+                      border-top: 1px solid #e1e4e8;
+                      padding: 20px 0;
+                      margin: 40px -20px -20px -20px;
+                      text-align: center;
+                      color: #586069;
+                  }
+                  .vyges-footer a {
+                      color: #0366d6;
+                      text-decoration: none;
+                  }
+                  .vyges-footer a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="vyges-header">
+                  <div class="vyges-logo">
+                      <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
+                      <span style="vertical-align: middle;">vyges</span>
+                  </div>
+                  <p class="vyges-tagline">Build Silicon Like Software</p>
+              </div>
+              
+              <h1>🔧 SPI Controller IP - Comprehensive Reports</h1>
+              <p class="timestamp">Generated: $(date -u)</p>
+              
+              <div class="summary-box">
+                  <h3>📈 Implementation Summary</h3>
+                  <ul class="summary-list">
+                      <li><strong>APB v2.0 Interface:</strong> Standard AMBA APB slave interface</li>
+                      <li><strong>All 4 SPI Modes:</strong> Mode 0, 1, 2, 3 (CPOL/CPHA combinations)</li>
+                      <li><strong>Configurable Data Width:</strong> 8, 16, or 32-bit data transfers</li>
+                      <li><strong>FIFO Buffering:</strong> 4 to 64 entries for TX/RX buffering</li>
+                      <li><strong>Multi-Slave Support:</strong> Up to 16 independent SPI devices</li>
+                      <li><strong>Interrupt Generation:</strong> TX empty, RX full, transfer complete, error interrupts</li>
+                  </ul>
+              </div>
+              
+              <table>
+                  <thead>
+                      <tr>
+                          <th style="width: 25%;">Report Name</th>
+                          <th style="width: 50%;">Description</th>
+                          <th style="width: 25%;">Reports</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr class="category-header test-verification">
+                          <td colspan="3">🧪 Test & Verification</td>
+                      </tr>
+                      <tr class="test-verification">
+                          <td><strong>Test Harness Report</strong></td>
+                          <td>Comprehensive test results including simulation, synthesis, and validation reports for SPI Controller IP with all SPI modes and FIFO testing.</td>
+                          <td>
+                              <a href="./test_harness_report.html" class="report-link html">HTML</a>
+                              <a href="./test_harness_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                      
+                      <tr class="category-header asic-synthesis">
+                          <td colspan="3">📊 ASIC Synthesis & Analysis</td>
+                      </tr>
+                      <tr class="asic-synthesis">
+                          <td><strong>Comprehensive ASIC Report</strong></td>
+                          <td>Complete ASIC synthesis analysis including gate counts, transistor analysis, and performance metrics for SPI Controller implementation.</td>
+                          <td>
+                              <a href="./asic/comprehensive_report.html" class="report-link html">HTML</a>
+                              <a href="./asic/comprehensive_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                      <tr class="asic-synthesis">
+                          <td><strong>Gate Analysis Report</strong></td>
+                          <td>Detailed gate-level analysis showing primitive gate counts, transistor estimates, and design style comparisons.</td>
+                          <td>
+                              <a href="./asic/gate_analysis_report.html" class="report-link html">HTML</a>
+                              <a href="./asic/gate_analysis_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                      <tr class="asic-synthesis">
+                          <td><strong>Synthesis Report</strong></td>
+                          <td>Yosys synthesis results including netlist generation, technology mapping, and optimization statistics.</td>
+                          <td>
+                              <a href="./asic/synthesis_report.html" class="report-link html">HTML</a>
+                              <a href="./asic/synthesis_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                      
+                      <tr class="category-header fpga-synthesis">
+                          <td colspan="3">🔌 FPGA Synthesis & Analysis</td>
+                      </tr>
+                      <tr class="fpga-synthesis">
+                          <td><strong>Comprehensive FPGA Report</strong></td>
+                          <td>Complete FPGA resource utilization analysis and synthesis results for Xilinx 7-series devices.</td>
+                          <td>
+                              <a href="./fpga/comprehensive_fpga_report.html" class="report-link html">HTML</a>
+                              <a href="./fpga/comprehensive_fpga_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                      <tr class="fpga-synthesis">
+                          <td><strong>FPGA Resource Analysis</strong></td>
+                          <td>Detailed LUT, flip-flop, and resource utilization analysis for FPGA implementations.</td>
+                          <td>
+                              <a href="./fpga/fpga_resource_analysis_report.html" class="report-link html">HTML</a>
+                              <a href="./fpga/fpga_resource_analysis_report.md" class="report-link md">Markdown</a>
+                          </td>
+                      </tr>
+                  </tbody>
+              </table>
+              
+              <div class="vyges-footer">
+                  <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+                  <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank">GitHub</a> | <a href="https://vyges.com" target="_blank">Website</a></p>
+              </div>
+          </body>
+          </html>
+          EOF
           
           # Configure git for deployment with proper authentication
           git config --global user.name "github-actions[bot]"
@@ -608,7 +1078,7 @@ jobs:
             
             # Commit and push
             git add .
-            git commit -m "Update SPI Controller reports - $(date -u)" || echo "No changes to commit"
+            git commit -m "Update synthesis reports - $(date -u)" || echo "No changes to commit"
             git push origin gh-pages
             
             echo "✅ GitHub Pages deployment complete!"
@@ -627,7 +1097,7 @@ jobs:
             
             # Create and push gh-pages branch
             git add .
-            git commit -m "Initial SPI Controller reports - $(date -u)"
+            git commit -m "Initial synthesis reports - $(date -u)"
             git branch -M gh-pages
             git push -u origin gh-pages
             
