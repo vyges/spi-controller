@@ -361,7 +361,25 @@ jobs:
             if [ -d "tb/sv_tb" ]; then
               echo "Running SystemVerilog tests with Verilator..."
               cd tb/sv_tb
-              make test_basic SIM=verilator || echo "⚠️ Verilator SystemVerilog tests failed (Python environment issue) - continuing with other tests"
+              
+              # Debug OS detection
+              echo "🔍 Debug: OS detection"
+              uname -s
+              echo "🔍 Debug: Verilator paths"
+              make debug
+              
+              # Try to run Verilator test
+              echo "🔍 Debug: Running Verilator test..."
+              if make test_basic SIM=verilator; then
+                echo "✅ Verilator SystemVerilog tests passed"
+                # Create a result file to indicate success
+                echo "Verilator simulation completed successfully!" > verilator_results.txt
+              else
+                echo "❌ Verilator SystemVerilog tests failed"
+                echo "Verilator simulation failed" > verilator_results.txt
+                # Don't exit, continue with other tests
+              fi
+              
               cd ../..
             fi
             

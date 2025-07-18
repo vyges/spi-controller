@@ -141,6 +141,17 @@ def scan_simulation_results():
                 verilator_results.append(f"Verilator Wrapper: {file}")
             for file in glob.glob("tb/sv_tb/obj_dir/*.vcd"):
                 verilator_results.append(f"Verilator Waveform: {file}")
+            
+            # Check for Verilator result file from workflow
+            if os.path.exists("tb/sv_tb/verilator_results.txt"):
+                try:
+                    with open("tb/sv_tb/verilator_results.txt", 'r') as f:
+                        result = f.read().strip()
+                        verilator_results.append(f"Verilator Test Result: {result}")
+                except:
+                    verilator_results.append("Verilator Test Result: Result file found but could not read")
+            else:
+                verilator_results.append("No Verilator results found")
         
         # Check for cocotb simulation outputs
         if os.path.exists("tb/cocotb"):
