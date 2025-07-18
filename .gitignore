@@ -85,3 +85,36 @@ secrets.json
 .vyges-ai-context.json.backup.*
 .vyges-ai-context.sha256
 
+# Verilator build artifacts
+obj_dir/
+*.a
+*.o
+*.d
+*.exe
+verilator_*_sim
+V*
+libV*.a
+libverilated.a
+verilated.*
+verilated_*.o
+verilated_*.d
+
+# Simulation artifacts
+simv*
+*.vcd
+*.fst
+*.ghw
+*.log
+work/
+transcript
+vsim.wlf
+simv.daidir
+csrc/
+ucli.key
+*.so
+
+# Build directories
+build/
+reports/
+*.out
+
