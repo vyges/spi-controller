@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Vyges SPI Controller IP - gate_analysis_report</title>
+  <title>Vyges SPI Controller IP - synthesis_report</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -26,104 +26,98 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">Vyges SPI Controller IP - gate_analysis_report</h1>
+<h1 class="title">Vyges SPI Controller IP - synthesis_report</h1>
 </header>
-<h1 id="spi-controller-gate-level-analysis-report">SPI Controller
-Gate-Level Analysis Report</h1>
-<p>Generated on: 2025-07-18 23:30:07</p>
-<h2 id="spi_controller">spi_controller</h2>
-<p><strong>Total Cells:</strong> 1644 <strong>Estimated
-Transistors:</strong> 6576</p>
-<h3 id="cell-breakdown">Cell Breakdown</h3>
+<h1 id="spi-controller-synthesis-report">SPI Controller Synthesis
+Report</h1>
+<p>Generated on: Fri Jul 18 23:30:07 UTC 2025</p>
+<h2 id="synthesis-summary">Synthesis Summary</h2>
+<p>This report contains the synthesis results for the SPI Controller IP
+using Yosys.</p>
+<h2 id="key-statistics">Key Statistics</h2>
+<ul>
+<li><strong>Total Cells:</strong> 1,662</li>
+<li><strong>Estimated Transistors:</strong> 6,648</li>
+<li><strong>Technology:</strong> Sky130B</li>
+<li><strong>Synthesis Tool:</strong> Yosys</li>
+</ul>
+<h2 id="cell-breakdown">Cell Breakdown</h2>
 <table>
 <thead>
 <tr class="header">
 <th>Cell Type</th>
 <th>Count</th>
-<th>Transistors</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><em>ALDFFE_PNP</em></td>
-<td>1</td>
-<td>4</td>
+<td>ANDNOT</td>
+<td>378</td>
 </tr>
 <tr class="even">
-<td><em>ANDNOT</em></td>
-<td>375</td>
-<td>1500</td>
+<td>MUX</td>
+<td>251</td>
 </tr>
 <tr class="odd">
-<td><em>AND</em></td>
-<td>29</td>
-<td>116</td>
+<td>OR</td>
+<td>255</td>
 </tr>
 <tr class="even">
-<td><em>DFFE_PN0P</em></td>
-<td>221</td>
-<td>884</td>
-</tr>
-<tr class="odd">
-<td><em>DFFE_PN1P</em></td>
-<td>3</td>
-<td>12</td>
-</tr>
-<tr class="even">
-<td><em>DFFE_PP</em></td>
+<td>DFFE_PP</td>
 <td>257</td>
-<td>1028</td>
 </tr>
 <tr class="odd">
-<td><em>DFF_PN0</em></td>
-<td>34</td>
-<td>136</td>
+<td>DFFE_PN0P</td>
+<td>221</td>
 </tr>
 <tr class="even">
-<td><em>MUX</em></td>
-<td>252</td>
-<td>1008</td>
+<td>XOR</td>
+<td>67</td>
 </tr>
 <tr class="odd">
-<td><em>NAND</em></td>
+<td>AND</td>
+<td>34</td>
+</tr>
+<tr class="even">
+<td>DFF_PN0</td>
+<td>34</td>
+</tr>
+<tr class="odd">
+<td>NAND</td>
 <td>43</td>
-<td>172</td>
 </tr>
 <tr class="even">
-<td><em>NOR</em></td>
-<td>11</td>
-<td>44</td>
+<td>NOT</td>
+<td>43</td>
 </tr>
 <tr class="odd">
-<td><em>NOT</em></td>
-<td>34</td>
-<td>136</td>
+<td>ORNOT</td>
+<td>35</td>
 </tr>
 <tr class="even">
-<td><em>ORNOT</em></td>
-<td>49</td>
-<td>196</td>
+<td>XNOR</td>
+<td>14</td>
 </tr>
 <tr class="odd">
-<td><em>OR</em></td>
-<td>252</td>
-<td>1008</td>
+<td>NOR</td>
+<td>23</td>
 </tr>
 <tr class="even">
-<td><em>XNOR</em></td>
-<td>18</td>
-<td>72</td>
+<td>DFFE_PN1P</td>
+<td>3</td>
 </tr>
 <tr class="odd">
-<td><em>XOR</em></td>
-<td>65</td>
-<td>260</td>
+<td>ALDFFE_PNP</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>scopeinfo</td>
+<td>3</td>
 </tr>
 </tbody>
 </table>
-<h2 id="summary">Summary</h2>
-<p><strong>Total Cells:</strong> 1644 <strong>Estimated Total
-Transistors:</strong> 6576</p>
+<h2 id="synthesis-log">Synthesis Log</h2>
+<p>The complete synthesis log is available in the build artifacts.</p>
 <div class="vyges-footer">
     <p>This report was automatically generated.</p>
     <p>Copyright (c) 2025 Vyges, Inc. All rights reserved.</p>
