@@ -76,8 +76,8 @@ jobs:
       UBUNTU_VERSION: "24.04"          # Ubuntu runner version (e.g., "24.04", "22.04")
       
       # Python Environment
-      PYTHON_VERSION: "3.10"           # Python version (e.g., "3.10", "3.11")
-      PYTHON_VERSION_SHORT: "3.10"     # Python version for commands (e.g., "3.10", "3.11")
+      PYTHON_VERSION: "3.12"           # Python version (e.g., "3.10", "3.11", "3.12")
+      PYTHON_VERSION_SHORT: "3.12"     # Python version for commands (e.g., "3.10", "3.11", "3.12")
       
       # Simulation Tools
       VERILATOR_VERSION: "5.038"       # Verilator version (e.g., "5.038", "5.039")
@@ -156,9 +156,7 @@ jobs:
             tree \
             unzip \
             make \
-            python${{ env.PYTHON_VERSION_SHORT }} \
-            python${{ env.PYTHON_VERSION_SHORT }}-pip \
-            python${{ env.PYTHON_VERSION_SHORT }}-venv \
+            python3 \
             bison \
             flex \
             help2man \
@@ -191,6 +189,13 @@ jobs:
             texlive-fonts-recommended \
             texlive-extra-utils \
             texlive-latex-extra -o Dpkg::Lock::Timeout=60 || echo "⚠️ Some essential packages failed to install"
+          
+          # Install Python packages (Ubuntu 24.04 uses python3 for any 3.x version)
+          echo "🔧 Installing Python packages for Ubuntu 24.04..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            python3-pip \
+            python3-venv \
+            || echo "⚠️ Python packages installation failed"
           
           # Install EDA tools with simplified apt package approach
           echo "🔧 Installing EDA tools via apt packages (Ubuntu 24.04)..."
@@ -1379,7 +1384,7 @@ jobs:
             echo "                          <td>${filesize}</td>" >> public/waveforms/index.html
             echo "                          <td>" >> public/waveforms/index.html
             echo "                              <a href=\"${basename}.vcd\" class=\"download-link\" download>📥 Download</a>" >> public/waveforms/index.html
-            echo "                              <a href=\"https://app.surfer-project.org/index.html?load_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd\" target=\"_blank\" class=\"download-link\" style=\"background: #6f42c1; margin-left: 8px;\">👁️ View</a>" >> public/waveforms/index.html
+            echo "                              <a href=\"https://app.surfer-project.org/index.html?load_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd&startup_commands=scope_add_recursive%20testbench\" target=\"_blank\" class=\"download-link\" style=\"background: #6f42c1; margin-left: 8px;\">👁️ View</a>" >> public/waveforms/index.html
             echo "                          </td>" >> public/waveforms/index.html
             echo "                      </tr>" >> public/waveforms/index.html
           done
