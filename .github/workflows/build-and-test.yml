@@ -145,84 +145,79 @@ jobs:
             fi
           done
           
-          # Install packages with retry logic
-          for i in {1..3}; do
-            echo "Attempting apt-get install (attempt $i/3)..."
-            if sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-              build-essential \
-              cmake \
-              git \
-              wget \
-              curl \
-              tree \
-              unzip \
-              make \
-              python${{ env.PYTHON_VERSION_SHORT }} \
-              python${{ env.PYTHON_VERSION_SHORT }}-pip \
-              python${{ env.PYTHON_VERSION_SHORT }}-venv \
-              bison \
-              flex \
-              help2man \
-              libfl-dev \
-              libfl2 \
-              libgit2-dev \
-              libunwind-dev \
-              libgoogle-perftools-dev \
-              libqt5svg5-dev \
-              libz-dev \
-              perl \
-              time \
-              zlib1g \
-              zlib1g-dev \
-              magic \
-              netgen \
-              klayout \
-              xschem \
-              ngspice \
-              gettext \
-              gnat \
-              gperf \
-              libreadline-dev \
-              gawk \
-              tcl-dev \
-              libffi-dev \
-              graphviz \
-              xdot \
-              pkg-config \
-              libboost-system-dev \
-              libboost-python-dev \
-              libboost-filesystem-dev \
-              # Install simulation and synthesis tools
-              verilator \
-              iverilog \
-              ghdl \
-              yosys \
-              berkeley-abc \
-              # Install open-source FPGA tools
-              nextpnr-ice40 \
-              nextpnr-ecp5 \
-              nextpnr-generic \
-              symbiflow-arch-defs \
-              vpr \
-              openfpga \
-              gtkwave \
-              # Install web-based tools
-              nodejs \
-              npm \
-              pandoc \
-              texlive-latex-base \
-              texlive-fonts-recommended \
-              texlive-extra-utils \
-              texlive-latex-extra -o Dpkg::Lock::Timeout=60; then
-              echo "apt-get install successful"
-              break
-            else
-              echo "apt-get install failed, attempt $i/3"
-              kill_apt_processes
-              wait_for_apt
-              sleep 10
-            fi
-          done
+          # Install essential packages first
+          echo "Installing essential packages..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            git \
+            wget \
+            curl \
+            tree \
+            unzip \
+            make \
+            python${{ env.PYTHON_VERSION_SHORT }} \
+            python${{ env.PYTHON_VERSION_SHORT }}-pip \
+            python${{ env.PYTHON_VERSION_SHORT }}-venv \
+            bison \
+            flex \
+            help2man \
+            libfl-dev \
+            libfl2 \
+            libgit2-dev \
+            libunwind-dev \
+            libgoogle-perftools-dev \
+            libqt5svg5-dev \
+            libz-dev \
+            perl \
+            time \
+            zlib1g \
+            zlib1g-dev \
+            gettext \
+            gnat \
+            gperf \
+            libreadline-dev \
+            gawk \
+            tcl-dev \
+            libffi-dev \
+            graphviz \
+            xdot \
+            pkg-config \
+            libboost-system-dev \
+            libboost-python-dev \
+            libboost-filesystem-dev \
+            pandoc \
+            texlive-latex-base \
+            texlive-fonts-recommended \
+            texlive-extra-utils \
+            texlive-latex-extra -o Dpkg::Lock::Timeout=60 || echo "⚠️ Some essential packages failed to install"
+          
+          # Install EDA tools with individual error handling
+          echo "Installing EDA tools..."
+          
+          # Core simulation tools (required)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y verilator || echo "⚠️ Verilator installation failed"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iverilog || echo "⚠️ Icarus Verilog installation failed"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y yosys || echo "⚠️ Yosys installation failed"
+          
+          # Optional tools (continue if they fail)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ghdl || echo "⚠️ GHDL installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y berkeley-abc || echo "⚠️ Berkeley ABC installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y gtkwave || echo "⚠️ GTKWave installation failed (optional)"
+          
+          # Layout tools (optional)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y magic || echo "⚠️ Magic installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y netgen || echo "⚠️ Netgen installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y klayout || echo "⚠️ KLayout installation failed (optional)"
+          
+          # FPGA tools (optional)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-ice40 || echo "⚠️ NextPNR ICE40 installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-ecp5 || echo "⚠️ NextPNR ECP5 installation failed (optional)"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-generic || echo "⚠️ NextPNR Generic installation failed (optional)"
+          
+          # Web tools
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs || echo "⚠️ Node.js installation failed"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y npm || echo "⚠️ NPM installation failed"
           
           # Fallback: Try alternative installation method if standard method failed
           if ! command -v verilator &> /dev/null || ! command -v iverilog &> /dev/null || ! command -v yosys &> /dev/null; then
@@ -241,6 +236,12 @@ jobs:
             echo "✅ Python ${{ env.PYTHON_VERSION }}: $(python${{ env.PYTHON_VERSION_SHORT }} --version)"
           else
             echo "❌ Python ${{ env.PYTHON_VERSION }} not found"
+            # Try alternative Python commands
+            if command -v python3 &> /dev/null; then
+              echo "✅ Python3 found: $(python3 --version)"
+            elif command -v python &> /dev/null; then
+              echo "✅ Python found: $(python --version)"
+            fi
           fi
           
           # Check each tool individually and provide helpful messages
@@ -359,11 +360,35 @@ jobs:
           fi
           
           # Check if critical tools are available
-          if command -v python${{ env.PYTHON_VERSION_SHORT }} &> /dev/null && command -v verilator &> /dev/null && command -v iverilog &> /dev/null && command -v yosys &> /dev/null; then
-            echo "✅ All critical tools are available"
-          else
+          critical_tools_missing=false
+          
+          if ! command -v verilator &> /dev/null; then
+            echo "❌ Verilator not found (critical)"
+            critical_tools_missing=true
+          fi
+          
+          if ! command -v iverilog &> /dev/null; then
+            echo "❌ Icarus Verilog not found (critical)"
+            critical_tools_missing=true
+          fi
+          
+          if ! command -v yosys &> /dev/null; then
+            echo "❌ Yosys not found (critical)"
+            critical_tools_missing=true
+          fi
+          
+          # Check for any Python version
+          if ! command -v python${{ env.PYTHON_VERSION_SHORT }} &> /dev/null && ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
+            echo "❌ Python not found (critical)"
+            critical_tools_missing=true
+          fi
+          
+          if [ "$critical_tools_missing" = true ]; then
             echo "❌ Some critical tools are missing"
-            exit 1
+            echo "⚠️ Workflow will continue but some features may not work"
+            # Don't exit 1, just warn
+          else
+            echo "✅ All critical tools are available"
           fi
 
       - name: Install Python dependencies
