@@ -245,15 +245,9 @@ jobs:
             netgen \
             || echo "⚠️ Layout tools installation failed"
           
-          # Install KLayout using SiliconCompiler approach (specific version)
-          echo "📦 Installing KLayout 0.30.2 (SiliconCompiler approach)..."
-          cd /tmp
-          wget -O klayout.deb "https://github.com/KLayout/klayout/releases/download/v0.30.2/klayout_0.30.2-1_amd64.deb" || echo "⚠️ KLayout download failed"
-          if [ -f klayout.deb ]; then
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ./klayout.deb || echo "⚠️ KLayout installation failed"
-            rm klayout.deb
-          fi
-          cd /github/workspace
+          # Install KLayout using Ubuntu repository (version 0.28.x available)
+          echo "📦 Installing KLayout from Ubuntu repository (version 0.28.x)..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y klayout || echo "⚠️ KLayout installation failed"
           
           # FPGA tools (optional)
           echo "📦 Installing FPGA tools..."
@@ -397,8 +391,8 @@ jobs:
           
           if command -v klayout &> /dev/null; then
             echo "✅ KLayout: $(klayout -v 2>/dev/null | head -1 || echo 'KLayout available')"
-            # Verify KLayout version matches SiliconCompiler approach
-            klayout -v 2>/dev/null | grep -q "0.30.2" && echo "✅ KLayout 0.30.2 verified (SiliconCompiler version)" || echo "ℹ️ KLayout version differs from SiliconCompiler (0.30.2)"
+            # Verify KLayout version (Ubuntu 24.04 provides 0.28.x)
+            klayout -v 2>/dev/null | grep -q "0.28" && echo "✅ KLayout 0.28.x verified (Ubuntu repository version)" || echo "ℹ️ KLayout version differs from expected 0.28.x"
           else
             echo "⚠️ KLayout not found (optional for layout viewing)"
           fi
