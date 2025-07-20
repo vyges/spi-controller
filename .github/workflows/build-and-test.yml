@@ -192,28 +192,46 @@ jobs:
             texlive-extra-utils \
             texlive-latex-extra -o Dpkg::Lock::Timeout=60 || echo "⚠️ Some essential packages failed to install"
           
-          # Install EDA tools with individual error handling
-          echo "Installing EDA tools..."
+          # Install EDA tools with simplified apt package approach
+          echo "🔧 Installing EDA tools via apt packages (Ubuntu 24.04)..."
           
-          # Core simulation tools (required)
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y verilator || echo "⚠️ Verilator installation failed"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iverilog || echo "⚠️ Icarus Verilog installation failed"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y yosys || echo "⚠️ Yosys installation failed"
+          # Core simulation tools (required) - using apt packages for reliability
+          echo "📦 Installing core simulation tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            verilator \
+            iverilog \
+            yosys \
+            || echo "⚠️ Core simulation tools installation failed"
           
-          # Optional tools (continue if they fail)
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ghdl || echo "⚠️ GHDL installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y berkeley-abc || echo "⚠️ Berkeley ABC installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y gtkwave || echo "⚠️ GTKWave installation failed (optional)"
+          # Optional simulation and synthesis tools
+          echo "📦 Installing optional simulation tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            ghdl \
+            berkeley-abc \
+            gtkwave \
+            || echo "⚠️ Optional simulation tools installation failed"
           
-          # Layout tools (optional)
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y magic || echo "⚠️ Magic installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y netgen || echo "⚠️ Netgen installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y klayout || echo "⚠️ KLayout installation failed (optional)"
+          # Layout and verification tools (added based on SiliconCompiler approach)
+          echo "📦 Installing layout and verification tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            magic \
+            netgen \
+            klayout \
+            || echo "⚠️ Layout tools installation failed"
           
           # FPGA tools (optional)
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-ice40 || echo "⚠️ NextPNR ICE40 installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-ecp5 || echo "⚠️ NextPNR ECP5 installation failed (optional)"
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nextpnr-generic || echo "⚠️ NextPNR Generic installation failed (optional)"
+          echo "📦 Installing FPGA tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            nextpnr-ice40 \
+            nextpnr-ecp5 \
+            nextpnr-generic \
+            || echo "⚠️ FPGA tools installation failed"
+          
+          # Add OpenROAD (new addition based on SiliconCompiler)
+          echo "📦 Installing OpenROAD..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            openroad \
+            || echo "⚠️ OpenROAD installation failed (optional)"
           
           # Web tools
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs || echo "⚠️ Node.js installation failed"
@@ -382,6 +400,12 @@ jobs:
             if [ -f "/usr/local/bin/openfpga" ]; then
               echo "✅ OpenFPGA found in manual installation"
             fi
+          fi
+          
+          if command -v openroad &> /dev/null; then
+            echo "✅ OpenROAD: $(openroad --version 2>/dev/null | head -1 || echo 'OpenROAD available')"
+          else
+            echo "⚠️ OpenROAD not found (optional for advanced synthesis)"
           fi
           
           if command -v node &> /dev/null; then
@@ -1701,7 +1725,8 @@ jobs:
                       <a href="https://gtkwave.sourceforge.net/" target="_blank">GTKWave</a>, 
                       <a href="https://surfer-project.org/" target="_blank">Surfer</a>, 
                       <a href="https://www.klayout.de/" target="_blank">KLayout</a>, 
-                      <a href="https://skywater-pdk.readthedocs.io" target="_blank">SkyWater Open PDK</a>
+                      <a href="https://skywater-pdk.readthedocs.io" target="_blank">SkyWater Open PDK</a>, 
+                      <a href="https://github.com/The-OpenROAD-Project/OpenROAD" target="_blank">OpenROAD</a>
                   </p>
               </div>
 
