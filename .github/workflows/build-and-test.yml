@@ -1256,16 +1256,24 @@ jobs:
                       <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
                       <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
                   </div>
-                  <h1>🌊 Vyges SPI Controller - Waveform Viewer</h1>
+                  <h1>Vyges SPI Controller - Waveform Viewer</h1>
                   <p>Interactive VCD waveform analysis for ${basename}</p>
               </div>
               
               <div class="container">
-                                                       <iframe class="waveform-container" 
-                          src="https://surfer-project.gitlab.io/surfer/?vcd=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd"
-                          title="Waveform Viewer"
-                          sandbox="allow-scripts allow-same-origin allow-forms">
-                  </iframe>
+                                                       <div class="waveform-container" style="border: 2px dashed #ccc; padding: 20px; text-align: center; background: #f8f9fa;">
+                      <h3>Waveform Viewer</h3>
+                      <p>Click the link below to open the waveform in Surfer:</p>
+                      <a href="https://surfer-project.gitlab.io/surfer/?vcd=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd" 
+                         target="_blank" 
+                         class="download-link" 
+                         style="display: inline-block; background: #0366d6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px;">
+                          🌊 Open Waveform in Surfer
+                      </a>
+                      <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                          <em>Note: Opens in a new tab for better compatibility</em>
+                      </p>
+                  </div>
                   
                   <div class="info-panel">
                       <h3>Waveform Information</h3>
