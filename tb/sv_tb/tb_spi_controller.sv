@@ -486,6 +486,10 @@ module tb_spi_controller;
     
     // Test stimulus
     initial begin
+        // Initialize VCD dumping for waveform analysis
+        $dumpfile("tb_spi_controller.vcd");
+        $dumpvars(0, tb_spi_controller);
+        
         // Initialize signals
         presetn = 1'b0;
         psel = 1'b0;

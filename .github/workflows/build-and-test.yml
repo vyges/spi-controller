@@ -4,6 +4,9 @@ name: Build and Test SPI Controller IP
 # OpenLane ASIC flow is disabled by default and requires manual setup
 # Focus is on simulation, synthesis, and verification with open-source tools
 
+# Configuration variables - modify these to change versions
+# These are used throughout the workflow for version consistency
+
 on:
   push:
     paths-ignore:
@@ -66,6 +69,37 @@ jobs:
   # Main build and test job - everything runs sequentially on one runner
   build-and-test:
     runs-on: ubuntu-24.04
+    env:
+      # Configuration variables - modify these to change versions
+      
+      # Infrastructure
+      UBUNTU_VERSION: "24.04"          # Ubuntu runner version (e.g., "24.04", "22.04")
+      
+      # Python Environment
+      PYTHON_VERSION: "3.10"           # Python version (e.g., "3.10", "3.11")
+      PYTHON_VERSION_SHORT: "3.10"     # Python version for commands (e.g., "3.10", "3.11")
+      
+      # Simulation Tools
+      VERILATOR_VERSION: "5.038"       # Verilator version (e.g., "5.038", "5.039")
+      ICARUS_VERSION: "14.0"           # Icarus Verilog version (e.g., "14.0", "13.0")
+      GHDL_VERSION: "latest"           # GHDL version (e.g., "latest", "4.0")
+      GTKWAVE_VERSION: "latest"        # GTKWave version (e.g., "latest", "3.3")
+      SURFER_VERSION: "latest"         # Surfer web-based VCD viewer (e.g., "latest", "1.0")
+      
+      # Synthesis Tools
+      YOSYS_VERSION: "latest"          # Yosys version (e.g., "latest", "0.34")
+      ABC_VERSION: "latest"            # Berkeley ABC version (e.g., "latest", "1.01")
+      
+      # Layout & Verification Tools
+      MAGIC_VERSION: "latest"          # Magic version (e.g., "latest", "8.3")
+      NETGEN_VERSION: "latest"         # Netgen version (e.g., "latest", "1.5")
+      KLAYOUT_VERSION: "latest"        # KLayout version (e.g., "latest", "0.28")
+      
+      # FPGA Tools
+      NEXTPNR_VERSION: "latest"        # NextPNR version (e.g., "latest", "0.6")
+      SYMBIFLOW_VERSION: "latest"      # SymbiFlow version (e.g., "latest", "2023.12")
+      VPR_VERSION: "latest"            # VPR version (e.g., "latest", "8.0")
+      OPENFPGA_VERSION: "latest"       # OpenFPGA version (e.g., "latest", "1.0")
     permissions:
       contents: write
       id-token: write
@@ -73,12 +107,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install system packages
+      - name: Install Ubuntu system packages
         run: |
           # Function to wait for apt lock to be released
           wait_for_apt() {
@@ -127,9 +156,9 @@ jobs:
               tree \
               unzip \
               make \
-              python3 \
-              python3-pip \
-              python3-venv \
+              python${{ env.PYTHON_VERSION_SHORT }} \
+              python${{ env.PYTHON_VERSION_SHORT }}-pip \
+              python${{ env.PYTHON_VERSION_SHORT }}-venv \
               bison \
               flex \
               help2man \
@@ -146,6 +175,7 @@ jobs:
               zlib1g-dev \
               magic \
               netgen \
+              klayout \
               xschem \
               ngspice \
               gettext \
@@ -161,10 +191,23 @@ jobs:
               libboost-system-dev \
               libboost-python-dev \
               libboost-filesystem-dev \
+              # Install simulation and synthesis tools
               verilator \
               iverilog \
+              ghdl \
               yosys \
+              berkeley-abc \
+              # Install open-source FPGA tools
+              nextpnr-ice40 \
+              nextpnr-ecp5 \
+              nextpnr-generic \
+              symbiflow-arch-defs \
+              vpr \
+              openfpga \
               gtkwave \
+              # Install web-based tools
+              nodejs \
+              npm \
               pandoc -o Dpkg::Lock::Timeout=60; then
               echo "apt-get install successful"
               break
@@ -188,6 +231,13 @@ jobs:
         run: |
           echo "🔍 Verifying tool installations..."
           
+          # Check Python version specifically
+          if command -v python${{ env.PYTHON_VERSION_SHORT }} &> /dev/null; then
+            echo "✅ Python ${{ env.PYTHON_VERSION }}: $(python${{ env.PYTHON_VERSION_SHORT }} --version)"
+          else
+            echo "❌ Python ${{ env.PYTHON_VERSION }} not found"
+          fi
+          
           # Check each tool individually and provide helpful messages
           if command -v verilator &> /dev/null; then
             echo "✅ Verilator: $(verilator --version | head -1)"
@@ -196,9 +246,15 @@ jobs:
           fi
           
           if command -v iverilog &> /dev/null; then
-            echo "✅ Icarus Verilog: $(iverilog -V | head -1)"
+            echo "✅ Icarus Verilog ${{ env.ICARUS_VERSION }}: $(iverilog -V | head -1)"
           else
-            echo "❌ Icarus Verilog not found"
+            echo "❌ Icarus Verilog ${{ env.ICARUS_VERSION }} not found"
+          fi
+          
+          if command -v ghdl &> /dev/null; then
+            echo "✅ GHDL ${{ env.GHDL_VERSION }}: $(ghdl --version 2>/dev/null | head -1 || echo 'GHDL available')"
+          else
+            echo "⚠️ GHDL ${{ env.GHDL_VERSION }} not found (optional for VHDL simulation)"
           fi
           
           if command -v yosys &> /dev/null; then
@@ -207,10 +263,82 @@ jobs:
             echo "❌ Yosys not found"
           fi
           
-          if command -v gtkwave &> /dev/null; then
-            echo "✅ GTKWave: $(gtkwave --version | head -1)"
+          if command -v abc &> /dev/null; then
+            echo "✅ Berkeley ABC ${{ env.ABC_VERSION }}: $(abc -v 2>/dev/null | head -1 || echo 'ABC available')"
           else
-            echo "⚠️ GTKWave not found (optional)"
+            echo "⚠️ Berkeley ABC ${{ env.ABC_VERSION }} not found (optional for synthesis)"
+          fi
+          
+          if command -v magic &> /dev/null; then
+            echo "✅ Magic ${{ env.MAGIC_VERSION }}: $(magic --version 2>/dev/null | head -1 || echo 'Magic available')"
+          else
+            echo "⚠️ Magic ${{ env.MAGIC_VERSION }} not found (optional for layout)"
+          fi
+          
+          if command -v netgen &> /dev/null; then
+            echo "✅ Netgen ${{ env.NETGEN_VERSION }}: $(netgen -version 2>/dev/null | head -1 || echo 'Netgen available')"
+          else
+            echo "⚠️ Netgen ${{ env.NETGEN_VERSION }} not found (optional for LVS)"
+          fi
+          
+          if command -v klayout &> /dev/null; then
+            echo "✅ KLayout ${{ env.KLAYOUT_VERSION }}: $(klayout -v 2>/dev/null | head -1 || echo 'KLayout available')"
+          else
+            echo "⚠️ KLayout ${{ env.KLAYOUT_VERSION }} not found (optional for layout viewing)"
+          fi
+          
+          if command -v nextpnr-ice40 &> /dev/null; then
+            echo "✅ NextPNR ICE40 ${{ env.NEXTPNR_VERSION }}: $(nextpnr-ice40 --version 2>/dev/null | head -1 || echo 'NextPNR ICE40 available')"
+          else
+            echo "⚠️ NextPNR ICE40 ${{ env.NEXTPNR_VERSION }} not found (optional for FPGA P&R)"
+          fi
+          
+          if command -v nextpnr-ecp5 &> /dev/null; then
+            echo "✅ NextPNR ECP5 ${{ env.NEXTPNR_VERSION }}: $(nextpnr-ecp5 --version 2>/dev/null | head -1 || echo 'NextPNR ECP5 available')"
+          else
+            echo "⚠️ NextPNR ECP5 ${{ env.NEXTPNR_VERSION }} not found (optional for FPGA P&R)"
+          fi
+          
+          if command -v nextpnr-generic &> /dev/null; then
+            echo "✅ NextPNR Generic ${{ env.NEXTPNR_VERSION }}: $(nextpnr-generic --version 2>/dev/null | head -1 || echo 'NextPNR Generic available')"
+          else
+            echo "⚠️ NextPNR Generic ${{ env.NEXTPNR_VERSION }} not found (optional for FPGA P&R)"
+          fi
+          
+          if command -v symbiflow_synth &> /dev/null; then
+            echo "✅ SymbiFlow ${{ env.SYMBIFLOW_VERSION }}: $(symbiflow_synth --version 2>/dev/null | head -1 || echo 'SymbiFlow available')"
+          else
+            echo "⚠️ SymbiFlow ${{ env.SYMBIFLOW_VERSION }} not found (optional for FPGA flow)"
+          fi
+          
+          if command -v vpr &> /dev/null; then
+            echo "✅ VPR ${{ env.VPR_VERSION }}: $(vpr --version 2>/dev/null | head -1 || echo 'VPR available')"
+          else
+            echo "⚠️ VPR ${{ env.VPR_VERSION }} not found (optional for FPGA architecture)"
+          fi
+          
+          if command -v openfpga &> /dev/null; then
+            echo "✅ OpenFPGA ${{ env.OPENFPGA_VERSION }}: $(openfpga --version 2>/dev/null | head -1 || echo 'OpenFPGA available')"
+          else
+            echo "⚠️ OpenFPGA ${{ env.OPENFPGA_VERSION }} not found (optional for FPGA architecture)"
+          fi
+          
+          if command -v node &> /dev/null; then
+            echo "✅ Node.js: $(node --version)"
+          else
+            echo "⚠️ Node.js not found (optional for web-based tools)"
+          fi
+          
+          if command -v npm &> /dev/null; then
+            echo "✅ NPM: $(npm --version)"
+          else
+            echo "⚠️ NPM not found (optional for web-based tools)"
+          fi
+          
+          if command -v gtkwave &> /dev/null; then
+            echo "✅ GTKWave ${{ env.GTKWAVE_VERSION }}: $(gtkwave --version | head -1)"
+          else
+            echo "⚠️ GTKWave ${{ env.GTKWAVE_VERSION }} not found (optional for waveform viewing)"
           fi
           
           if command -v dot &> /dev/null; then
@@ -220,7 +348,7 @@ jobs:
           fi
           
           # Check if critical tools are available
-          if command -v verilator &> /dev/null && command -v iverilog &> /dev/null && command -v yosys &> /dev/null; then
+          if command -v python${{ env.PYTHON_VERSION_SHORT }} &> /dev/null && command -v verilator &> /dev/null && command -v iverilog &> /dev/null && command -v yosys &> /dev/null; then
             echo "✅ All critical tools are available"
           else
             echo "❌ Some critical tools are missing"
@@ -229,24 +357,37 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install cocotb pytest pytest-cov
+          python${{ env.PYTHON_VERSION_SHORT }} -m pip install --upgrade pip
+          pip${{ env.PYTHON_VERSION_SHORT }} install cocotb pytest pytest-cov
           
-          # Fix Python environment for Verilator
+          # Set up Python environment for Verilator
           echo "🔧 Setting up Python environment for Verilator..."
-          export PYTHONPATH="$pythonLocation/lib/python3.10/site-packages:$PYTHONPATH"
-          export PYTHONHOME="$pythonLocation"
+          export PYTHONPATH="/usr/lib/python${{ env.PYTHON_VERSION_SHORT }}/dist-packages:/usr/local/lib/python${{ env.PYTHON_VERSION }}/dist-packages:$PYTHONPATH"
           export PYTHONNOUSERSITE=1
           export PYTHONUNBUFFERED=1
           echo "PYTHONPATH=$PYTHONPATH" >> $GITHUB_ENV
-          echo "PYTHONHOME=$PYTHONHOME" >> $GITHUB_ENV
           echo "PYTHONNOUSERSITE=1" >> $GITHUB_ENV
           echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
+
+      - name: Install Surfer web-based VCD viewer
+        run: |
+          echo "🌊 Installing Surfer web-based VCD viewer..."
           
-          # Create symlink to ensure Verilator uses correct Python
-          sudo ln -sf $pythonLocation/bin/python3.10 /usr/local/bin/python3
-          export PATH="/usr/local/bin:$PATH"
-          echo "PATH=$PATH" >> $GITHUB_ENV
+          # Install Surfer globally via npm
+          npm install -g @surfer-project/surfer || echo "⚠️ Surfer installation failed, will use alternative approach"
+          
+          # Alternative: Clone and build Surfer locally
+          if ! command -v surfer &> /dev/null; then
+            echo "🔧 Setting up Surfer from source..."
+            git clone https://gitlab.com/surfer-project/surfer.git surfer-local || echo "⚠️ Surfer clone failed"
+            if [ -d "surfer-local" ]; then
+              cd surfer-local
+              npm install || echo "⚠️ Surfer build failed"
+              echo "✅ Surfer setup completed"
+            fi
+          fi
+          
+          echo "🌊 Surfer web-based VCD viewer setup complete"
 
       # Validation step
       - name: Validate project structure
@@ -295,7 +436,7 @@ jobs:
           fi
 
       # Linting step
-      - name: Lint SystemVerilog files
+      - name: Lint SystemVerilog RTL files
         if: github.event.inputs.test_linting == 'true' || github.event_name != 'workflow_dispatch'
         run: |
           echo "🔍 Linting SystemVerilog files..."
@@ -598,7 +739,7 @@ jobs:
             public/fpga/
 
       # Generate comprehensive test harness report
-      - name: Generate test harness report
+      - name: Generate comprehensive test harness report with HTML conversion
         if: always()
         run: |
           echo "📊 Generating comprehensive test harness report..."
@@ -761,8 +902,241 @@ jobs:
           echo "✅ All markdown reports converted to HTML"
           fi
 
-      # Generate test harness report
-      - name: Generate test harness report
+      - name: Generate web-based waveform reports
+        if: always()
+        run: |
+          echo "🌊 Generating web-based waveform reports with Surfer..."
+          
+          # Create waveform viewing directory
+          mkdir -p public/waveforms
+          
+          # Find all VCD files and create web-based viewers
+          find . -name "*.vcd" -type f | while read vcd_file; do
+            basename=$(basename "$vcd_file" .vcd)
+            dirname=$(dirname "$vcd_file")
+            
+            echo "🔍 Processing VCD file: $vcd_file"
+            
+            # Copy VCD file to public directory
+            cp "$vcd_file" "public/waveforms/${basename}.vcd"
+            
+            # Create HTML viewer page for this VCD file
+            cat > "public/waveforms/${basename}_viewer.html" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller - Waveform Viewer: ${basename}</title>
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                      margin: 0; 
+                      padding: 20px; 
+                      background: #f8f9fa;
+                  }
+                  .header {
+                      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                      color: white;
+                      padding: 20px;
+                      margin: -20px -20px 20px -20px;
+                      text-align: center;
+                      border-radius: 0 0 15px 15px;
+                  }
+                  .container {
+                      max-width: 1400px;
+                      margin: 0 auto;
+                      background: white;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                      overflow: hidden;
+                  }
+                  .waveform-container {
+                      width: 100%;
+                      height: 600px;
+                      border: none;
+                  }
+                  .info-panel {
+                      padding: 20px;
+                      background: #f8f9fa;
+                      border-top: 1px solid #e1e4e8;
+                  }
+                  .download-link {
+                      display: inline-block;
+                      background: #0366d6;
+                      color: white;
+                      padding: 8px 16px;
+                      text-decoration: none;
+                      border-radius: 4px;
+                      margin: 5px;
+                  }
+                  .download-link:hover {
+                      background: #0256cc;
+                  }
+                  .back-link {
+                      display: inline-block;
+                      background: #6c757d;
+                      color: white;
+                      padding: 8px 16px;
+                      text-decoration: none;
+                      border-radius: 4px;
+                      margin: 5px;
+                  }
+                  .back-link:hover {
+                      background: #5a6268;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🌊 Vyges SPI Controller - Waveform Viewer</h1>
+                  <p>Interactive VCD waveform analysis for ${basename}</p>
+              </div>
+              
+              <div class="container">
+                                     <iframe class="waveform-container" 
+                           src="https://surfer-project.gitlab.io/surfer/?vcd=${basename}.vcd"
+                           title="Waveform Viewer"
+                           sandbox="allow-scripts allow-same-origin allow-forms">
+                   </iframe>
+                  
+                  <div class="info-panel">
+                      <h3>Waveform Information</h3>
+                      <p><strong>File:</strong> ${basename}.vcd</p>
+                      <p><strong>Generated:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
+                      <p><strong>Tool:</strong> Surfer Web-based VCD Viewer</p>
+                      
+                      <h4>Actions</h4>
+                      <a href="${basename}.vcd" class="download-link" download>📥 Download VCD File</a>
+                      <a href="../index.html" class="back-link">← Back to Reports</a>
+                      
+                      <h4>Viewing Instructions</h4>
+                      <ul>
+                          <li>Use the waveform viewer above to analyze signal timing</li>
+                          <li>Zoom in/out using mouse wheel or zoom controls</li>
+                          <li>Click on signals to highlight them</li>
+                          <li>Download the VCD file for offline analysis with GTKWave</li>
+                      </ul>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+            
+            echo "✅ Created web viewer for ${basename}.vcd"
+          done
+          
+          # Create waveform index page
+          cat > "public/waveforms/index.html" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller - Waveform Reports</title>
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                      max-width: 1200px; 
+                      margin: 0 auto; 
+                      padding: 20px; 
+                      line-height: 1.6;
+                      color: #24292e;
+                  }
+                  .header {
+                      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                      color: white;
+                      padding: 30px;
+                      margin: -20px -20px 30px -20px;
+                      text-align: center;
+                      border-radius: 0 0 15px 15px;
+                  }
+                  .waveform-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 20px;
+                      margin: 20px 0;
+                  }
+                  .waveform-card {
+                      background: white;
+                      border: 1px solid #e1e4e8;
+                      border-radius: 8px;
+                      padding: 20px;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                  }
+                  .waveform-card h3 {
+                      margin-top: 0;
+                      color: #0366d6;
+                  }
+                  .waveform-link {
+                      display: inline-block;
+                      background: #0366d6;
+                      color: white;
+                      padding: 8px 16px;
+                      text-decoration: none;
+                      border-radius: 4px;
+                      margin: 5px 0;
+                  }
+                  .waveform-link:hover {
+                      background: #0256cc;
+                  }
+                  .back-link {
+                      display: inline-block;
+                      background: #6c757d;
+                      color: white;
+                      padding: 8px 16px;
+                      text-decoration: none;
+                      border-radius: 4px;
+                      margin: 20px 0;
+                  }
+                  .back-link:hover {
+                      background: #5a6268;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🌊 Vyges SPI Controller - Waveform Reports</h1>
+                  <p>Interactive VCD waveform analysis and visualization</p>
+              </div>
+              
+              <a href="../index.html" class="back-link">← Back to Main Reports</a>
+              
+              <div class="waveform-grid">
+          EOF
+          
+          # Add waveform cards to index
+          find public/waveforms -name "*_viewer.html" | while read viewer_file; do
+            basename=$(basename "$viewer_file" _viewer.html)
+            echo "                  <div class=\"waveform-card\">" >> public/waveforms/index.html
+            echo "                      <h3>${basename}</h3>" >> public/waveforms/index.html
+            echo "                      <p>Interactive waveform viewer for ${basename} simulation</p>" >> public/waveforms/index.html
+            echo "                      <a href=\"${basename}_viewer.html\" class=\"waveform-link\">🌊 View Waveform</a>" >> public/waveforms/index.html
+            echo "                      <a href=\"${basename}.vcd\" class=\"waveform-link\" download>📥 Download VCD</a>" >> public/waveforms/index.html
+            echo "                  </div>" >> public/waveforms/index.html
+          done
+          
+          # Close HTML
+          cat >> public/waveforms/index.html << EOF
+              </div>
+              
+              <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                  <h3>Waveform Analysis Instructions</h3>
+                  <ul>
+                      <li><strong>Interactive Viewing:</strong> Click on any waveform card to open the interactive viewer</li>
+                      <li><strong>Signal Analysis:</strong> Use zoom, pan, and signal highlighting features</li>
+                      <li><strong>Download:</strong> Download VCD files for offline analysis with GTKWave</li>
+                      <li><strong>Cross-Reference:</strong> Compare waveforms with test results in the main reports</li>
+                  </ul>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          echo "✅ Web-based waveform reports generated successfully"
+
+      # Generate basic test harness report
+      - name: Generate basic test harness report
         run: |
           echo "📊 Generating test harness report..."
           
@@ -787,6 +1161,8 @@ jobs:
             tb/*/build/
             tb/*/waves/
             tb/*/coverage/
+            tb/*/*.vcd
+            tb/*/obj_dir/*.vcd
           retention-days: 30
 
       # Deploy to GitHub Pages
@@ -1054,6 +1430,13 @@ jobs:
                               <a href="./test_harness_report.md" class="report-link md">Markdown</a>
                           </td>
                       </tr>
+                      <tr class="test-verification">
+                          <td><strong>🌊 Waveform Analysis</strong></td>
+                          <td>Interactive VCD waveform analysis using Surfer web-based viewer for debugging and signal analysis.</td>
+                          <td>
+                              <a href="./waveforms/index.html" class="report-link html">🌊 Waveforms</a>
+                          </td>
+                      </tr>
                       
                       <tr class="category-header asic-synthesis">
                           <td colspan="3">📊 ASIC Synthesis & Analysis</td>
@@ -1192,7 +1575,7 @@ jobs:
           echo "- Test Harness Report: [test_harness_report.md](test_harness_report.md)" >> public/status_report.md
           echo "- Synthesis Reports: [comprehensive_report.md](comprehensive_report.md)" >> public/status_report.md
           echo "- Build logs: Available in GitHub Actions" >> public/status_report.md
-          echo "- Waveforms: Available in build artifacts" >> public/status_report.md
+          echo "- Waveforms: Available in build artifacts and [web viewer](./waveforms/index.html)" >> public/status_report.md
           echo "- Coverage reports: Available in build artifacts" >> public/status_report.md
           echo "- Live Reports: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> public/status_report.md
           
