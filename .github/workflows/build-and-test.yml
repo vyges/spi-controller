@@ -393,17 +393,49 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python${{ env.PYTHON_VERSION_SHORT }} -m pip install --upgrade pip
-          pip${{ env.PYTHON_VERSION_SHORT }} install cocotb pytest pytest-cov
+          # Detect available Python version
+          if command -v python${{ env.PYTHON_VERSION_SHORT }} &> /dev/null; then
+            PYTHON_CMD="python${{ env.PYTHON_VERSION_SHORT }}"
+            PIP_CMD="pip${{ env.PYTHON_VERSION_SHORT }}"
+          elif command -v python3 &> /dev/null; then
+            PYTHON_CMD="python3"
+            PIP_CMD="pip3"
+          elif command -v python &> /dev/null; then
+            PYTHON_CMD="python"
+            PIP_CMD="pip"
+          else
+            echo "❌ No Python installation found"
+            exit 1
+          fi
+          
+          echo "🔍 Using Python: $PYTHON_CMD"
+          echo "🔍 Using pip: $PIP_CMD"
+          
+          # Upgrade pip
+          $PYTHON_CMD -m pip install --upgrade pip
+          
+          # Install Python dependencies
+          $PIP_CMD install cocotb pytest pytest-cov
           
           # Set up Python environment for Verilator
           echo "🔧 Setting up Python environment for Verilator..."
-          export PYTHONPATH="/usr/lib/python${{ env.PYTHON_VERSION_SHORT }}/dist-packages:/usr/local/lib/python${{ env.PYTHON_VERSION }}/dist-packages:$PYTHONPATH"
+          
+          # Detect Python version for path setup
+          PYTHON_VERSION_DETECTED=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "🔍 Detected Python version: $PYTHON_VERSION_DETECTED"
+          
+          # Set up Python paths dynamically
+          export PYTHONPATH="/usr/lib/python$PYTHON_VERSION_DETECTED/dist-packages:/usr/local/lib/python$PYTHON_VERSION_DETECTED/dist-packages:$PYTHONPATH"
           export PYTHONNOUSERSITE=1
           export PYTHONUNBUFFERED=1
+          export PYTHON_CMD="$PYTHON_CMD"
+          export PIP_CMD="$PIP_CMD"
+          
           echo "PYTHONPATH=$PYTHONPATH" >> $GITHUB_ENV
           echo "PYTHONNOUSERSITE=1" >> $GITHUB_ENV
           echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
+          echo "PYTHON_CMD=$PYTHON_CMD" >> $GITHUB_ENV
+          echo "PIP_CMD=$PIP_CMD" >> $GITHUB_ENV
 
       - name: Install Surfer web-based VCD viewer
         run: |
@@ -522,8 +554,8 @@ jobs:
           
           # Verify Python environment for Verilator
           echo "🔍 Verifying Python environment for Verilator..."
-          python3 --version
-          which python3
+          $PYTHON_CMD --version
+          which $PYTHON_CMD
           echo "PYTHONPATH=$PYTHONPATH"
           echo "PYTHONHOME=$PYTHONHOME"
           
@@ -796,7 +828,7 @@ jobs:
           tree public/ || find public/ -type f
           echo "🔍 Debug: Footer file exists: $(ls -la public/vyges-footer.html)"
           
-          python3 generate_test_harness_report.py
+          $PYTHON_CMD generate_test_harness_report.py
           
           # Copy report to public directory for GitHub Pages
           if [ -f "test_harness_report.md" ]; then
@@ -1177,7 +1209,7 @@ jobs:
           echo "📊 Generating test harness report..."
           
           # Generate the test harness report
-          python3 generate_test_harness_report.py
+          $PYTHON_CMD generate_test_harness_report.py
           
           # Copy the report to public directory
           cp test_harness_report.md public/
