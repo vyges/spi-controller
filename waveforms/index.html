@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vyges SPI Controller - Waveform Reports</title>
+    <title>Vyges SPI Controller - VCD Waveform Files</title>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -38,17 +38,17 @@
             margin-top: 0;
             color: #0366d6;
         }
-        .waveform-link {
+        .download-link {
             display: inline-block;
-            background: #0366d6;
+            background: #28a745;
             color: white;
             padding: 8px 16px;
             text-decoration: none;
             border-radius: 4px;
             margin: 5px 0;
         }
-        .waveform-link:hover {
-            background: #0256cc;
+        .download-link:hover {
+            background: #218838;
         }
         .back-link {
             display: inline-block;
@@ -62,6 +62,13 @@
         .back-link:hover {
             background: #5a6268;
         }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -70,115 +77,113 @@
             <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
             <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
         </div>
-        <h1>🌊 Vyges SPI Controller - Waveform Reports</h1>
-        <p>Interactive VCD waveform analysis and visualization</p>
+        <h1>Vyges SPI Controller - Waveform Reports</h1>
+        p>Download VCD files for waveform analysis</p>
     </div>
     
     <a href="../index.html" class="back-link">← Back to Main Reports</a>
     
+    <div class="info-box">
+        <h3>📋 VCD File Information</h3>
+        <p><strong>Format:</strong> Value Change Dump (VCD) - Standard waveform format</p>
+        <p><strong>Generated:</strong> 2025-07-20 04:11:59 UTC</p>
+        <p><strong>Usage:</strong> Download and open with GTKWave, Surfer, or other VCD viewers</p>
+    </div>
+    
     <div class="waveform-grid">
                   <div class="waveform-card">
-                      <h3>vhdl3</h3>
-                      <p>Interactive waveform viewer for vhdl3 simulation</p>
-                      <a href="vhdl3_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="vhdl3.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>xx_2</h3>
-                      <p>Interactive waveform viewer for xx_2 simulation</p>
-                      <a href="xx_2_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="xx_2.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>verilator_empty_scope</h3>
-                      <p>Interactive waveform viewer for verilator_empty_scope simulation</p>
-                      <a href="verilator_empty_scope_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="verilator_empty_scope.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>random_3_16_true</h3>
-                      <p>Interactive waveform viewer for random_3_16_true simulation</p>
-                      <a href="random_3_16_true_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="random_3_16_true.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>counter2</h3>
-                      <p>Interactive waveform viewer for counter2 simulation</p>
-                      <a href="counter2_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="counter2.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>issue_145</h3>
-                      <p>Interactive waveform viewer for issue_145 simulation</p>
-                      <a href="issue_145_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="issue_145.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
                       <h3>with_8_bit</h3>
-                      <p>Interactive waveform viewer for with_8_bit simulation</p>
-                      <a href="with_8_bit_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="with_8_bit.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>picorv32</h3>
-                      <p>Interactive waveform viewer for picorv32 simulation</p>
-                      <a href="picorv32_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="picorv32.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>with_1_bit</h3>
-                      <p>Interactive waveform viewer for with_1_bit simulation</p>
-                      <a href="with_1_bit_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="with_1_bit.vcd" class="waveform-link" download>📥 Download VCD</a>
-                  </div>
-                  <div class="waveform-card">
-                      <h3>gameroy_trace_with_non_zero_start</h3>
-                      <p>Interactive waveform viewer for gameroy_trace_with_non_zero_start simulation</p>
-                      <a href="gameroy_trace_with_non_zero_start_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="gameroy_trace_with_non_zero_start.vcd" class="waveform-link" download>📥 Download VCD</a>
+                      <p>VCD waveform file (289)</p>
+                      <a href="with_8_bit.vcd" class="download-link" download>📥 Download VCD</a>
                   </div>
                   <div class="waveform-card">
                       <h3>atxmega256a3u-bmda-jtag_short</h3>
-                      <p>Interactive waveform viewer for atxmega256a3u-bmda-jtag_short simulation</p>
-                      <a href="atxmega256a3u-bmda-jtag_short_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="atxmega256a3u-bmda-jtag_short.vcd" class="waveform-link" download>📥 Download VCD</a>
+                      <p>VCD waveform file (2.1K)</p>
+                      <a href="atxmega256a3u-bmda-jtag_short.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>counter2</h3>
+                      <p>VCD waveform file (623)</p>
+                      <a href="counter2.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>issue_145</h3>
+                      <p>VCD waveform file (133)</p>
+                      <a href="issue_145.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>with_1_bit</h3>
+                      <p>VCD waveform file (247)</p>
+                      <a href="with_1_bit.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>gameroy_trace_with_non_zero_start</h3>
+                      <p>VCD waveform file (1.2K)</p>
+                      <a href="gameroy_trace_with_non_zero_start.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>random_3_16_true</h3>
+                      <p>VCD waveform file (3.3M)</p>
+                      <a href="random_3_16_true.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>verilator_empty_scope</h3>
+                      <p>VCD waveform file (132K)</p>
+                      <a href="verilator_empty_scope.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>picorv32</h3>
+                      <p>VCD waveform file (511K)</p>
+                      <a href="picorv32.vcd" class="download-link" download>📥 Download VCD</a>
                   </div>
                   <div class="waveform-card">
                       <h3>xx_1</h3>
-                      <p>Interactive waveform viewer for xx_1 simulation</p>
-                      <a href="xx_1_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="xx_1.vcd" class="waveform-link" download>📥 Download VCD</a>
+                      <p>VCD waveform file (671)</p>
+                      <a href="xx_1.vcd" class="download-link" download>📥 Download VCD</a>
                   </div>
                   <div class="waveform-card">
-                      <h3>tb_spi_controller</h3>
-                      <p>Interactive waveform viewer for tb_spi_controller simulation</p>
-                      <a href="tb_spi_controller_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="tb_spi_controller.vcd" class="waveform-link" download>📥 Download VCD</a>
+                      <h3>xx_2</h3>
+                      <p>VCD waveform file (583)</p>
+                      <a href="xx_2.vcd" class="download-link" download>📥 Download VCD</a>
                   </div>
                   <div class="waveform-card">
                       <h3>counter</h3>
-                      <p>Interactive waveform viewer for counter simulation</p>
-                      <a href="counter_viewer.html" class="waveform-link">🌊 View Waveform</a>
-                      <a href="counter.vcd" class="waveform-link" download>📥 Download VCD</a>
+                      <p>VCD waveform file (1.3K)</p>
+                      <a href="counter.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>vhdl3</h3>
+                      <p>VCD waveform file (726)</p>
+                      <a href="vhdl3.vcd" class="download-link" download>📥 Download VCD</a>
+                  </div>
+                  <div class="waveform-card">
+                      <h3>tb_spi_controller</h3>
+                      <p>VCD waveform file (97K)</p>
+                      <a href="tb_spi_controller.vcd" class="download-link" download>📥 Download VCD</a>
                   </div>
     </div>
     
-                      <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-            <h3>Waveform Analysis Instructions</h3>
-            <ul>
-                <li><strong>Interactive Viewing:</strong> Click on any waveform card to open the interactive viewer</li>
-                <li><strong>Signal Analysis:</strong> Use zoom, pan, and signal highlighting features</li>
-                <li><strong>Download:</strong> Download VCD files for offline analysis with GTKWave</li>
-                <li><strong>Cross-Reference:</strong> Compare waveforms with test results in the main reports</li>
-            </ul>
-        </div>
+    <div class="info-box">
+        <h3>🔧 Recommended VCD Viewers</h3>
+        <ul>
+            <li><strong>GTKWave:</strong> Open-source waveform viewer (Linux/macOS/Windows)</li>
+            <li><strong>Surfer:</strong> Web-based VCD viewer (drag & drop VCD files)</li>
+            <li><strong>Waveform Viewer:</strong> Various commercial tools</li>
+            <li><strong>VSCode Extensions:</strong> Surfer, GTKWave, or other VCD viewers</li>
+        </ul>
         
-        <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
-            <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
-            <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
-            <p style="font-size: 12px; margin-top: 10px; color: #6a737d;">
-                Waveform viewer powered by <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a> - Open source VCD viewer
-            </p>
-        </div>
-    </body>
-    </html>
+        <h4>Quick Start:</h4>
+        <ol>
+            <li>Download any VCD file using the buttons above</li>
+            <li>Open with your preferred VCD viewer</li>
+            <li>Analyze signal timing and behavior</li>
+            <li>Compare with test results in the main reports</li>
+        </ol>
+    </div>
+    
+    <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
+        <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+        <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
+    </div>
+</body>
+</html>
