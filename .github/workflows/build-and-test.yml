@@ -241,26 +241,26 @@ jobs:
             fi
           fi
           
-          # Manual FPGA tool installation (inspired by F4PGA AArch64 guide)
-          echo "🔧 Setting up manual FPGA tool installation..."
-          export F4PGA_INSTALL_DIR="/opt/f4pga"
-          sudo mkdir -p $F4PGA_INSTALL_DIR
-          export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
-          
-          # Install additional build dependencies for FPGA tools
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            clang \
-            libftdi1-dev \
-            autoconf \
-            swig \
-            uuid-dev \
-            python3-orderedmultidict \
-            python3-psutil \
-            python3-dev \
-            default-jre \
-            lcov \
-            libantlr4-runtime-dev \
-            Cython || echo "⚠️ Some FPGA build dependencies failed"
+          # Manual FPGA tool installation (inspired by F4PGA AArch64 guide) - DISABLED
+          # echo "🔧 Setting up manual FPGA tool installation..."
+          # export F4PGA_INSTALL_DIR="/opt/f4pga"
+          # sudo mkdir -p $F4PGA_INSTALL_DIR
+          # export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
+          # 
+          # # Install additional build dependencies for FPGA tools
+          # sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+          #   clang \
+          #   libftdi1-dev \
+          #   autoconf \
+          #   swig \
+          #   uuid-dev \
+          #   python3-orderedmultidict \
+          #   python3-psutil \
+          #   python3-dev \
+          #   default-jre \
+          #   lcov \
+          #   libantlr4-runtime-dev \
+          #   Cython || echo "⚠️ Some FPGA build dependencies failed"
           
           # Fallback: Try alternative installation method if standard method failed
           if ! command -v verilator &> /dev/null || ! command -v iverilog &> /dev/null || ! command -v yosys &> /dev/null; then
@@ -512,96 +512,72 @@ jobs:
           
           echo "🌊 Surfer web-based VCD viewer setup complete"
 
-      # Manual FPGA tool installation (for AArch64 compatibility)
-      - name: Install FPGA tools manually
-        run: |
-          echo "🔧 Installing FPGA tools manually for AArch64 compatibility..."
-          
-          # Set up environment
-          export F4PGA_INSTALL_DIR="/opt/f4pga"
-          export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
-          export PYTHONPATH="$PYTHONPATH:$F4PGA_INSTALL_DIR/lib/python3.*/site-packages"
-          
-          # Check if we need manual installation
-          FPGA_TOOLS_MISSING=false
-          if ! command -v symbiflow_synth &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
-          if ! command -v vpr &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
-          if ! command -v openfpga &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
-          
-          if [ "$FPGA_TOOLS_MISSING" = true ]; then
-            echo "🔧 Manual FPGA tool installation required..."
-            
-            # Install openFPGALoader (if not available)
-            if ! command -v openFPGALoader &> /dev/null; then
-              echo "📦 Installing openFPGALoader..."
-              cd /tmp
-              git clone https://github.com/trabucayre/openFPGALoader.git
-              cd openFPGALoader
-              mkdir build && cd build
-              cmake .. -DCMAKE_BUILD_TYPE=Release
-              make -j$(nproc)
-              sudo make install
-              echo "✅ openFPGALoader installed"
-            fi
-            
-            # Install VTR (VPR) manually
-            if ! command -v vpr &> /dev/null; then
-              echo "📦 Installing VTR (VPR)..."
-              cd /tmp
-              git clone https://github.com/verilog-to-routing/vtr-verilog-to-routing.git
-              cd vtr-verilog-to-routing
-              ./install_dependencies.sh
-              make -j$(nproc)
-              sudo make install
-              echo "✅ VTR (VPR) installed"
-            fi
-            
-            # Install SymbiFlow tools manually
-            if ! command -v symbiflow_synth &> /dev/null; then
-              echo "📦 Installing SymbiFlow tools..."
-              cd /tmp
-              
-              # Install prjxray-db
-              git clone https://github.com/f4pga/prjxray-db.git
-              cd prjxray-db
-              make -j$(nproc)
-              sudo make install
-              cd ..
-              
-              # Install prjxray-tools
-              git clone https://github.com/f4pga/prjxray-tools.git
-              cd prjxray-tools
-              make -j$(nproc)
-              sudo make install
-              cd ..
-              
-              # Install symbiflow-yosys-plugins
-              git clone https://github.com/f4pga/symbiflow-yosys-plugins.git
-              cd symbiflow-yosys-plugins
-              make -j$(nproc)
-              sudo make install
-              cd ..
-              
-              echo "✅ SymbiFlow tools installed"
-            fi
-            
-            # Install OpenFPGA manually
-            if ! command -v openfpga &> /dev/null; then
-              echo "📦 Installing OpenFPGA..."
-              cd /tmp
-              git clone https://github.com/LNIS-Projects/OpenFPGA.git
-              cd OpenFPGA
-              mkdir build && cd build
-              cmake .. -DCMAKE_BUILD_TYPE=Release
-              make -j$(nproc)
-              sudo make install
-              echo "✅ OpenFPGA installed"
-            fi
-            
-            echo "✅ Manual FPGA tool installation complete"
-          else
-            echo "✅ FPGA tools already available"
-          fi
+      # Manual FPGA tool installation (fallback for apt package issues) - DISABLED
+      # - name: Install FPGA tools manually
+      #   run: |
+      #     echo "🔧 Installing FPGA tools manually (fallback for apt package issues)..."
+      #     
+      #     # Set up environment
+      #     export F4PGA_INSTALL_DIR="/opt/f4pga"
+      #     export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
+      #     export PYTHONPATH="$PYTHONPATH:$F4PGA_INSTALL_DIR/lib/python3.*/site-packages"
+      #     
+      #     # Check if we need manual installation (focus on essential tools)
+      #     FPGA_TOOLS_MISSING=false
+      #     if ! command -v vpr &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
+      #     
+      #     if [ "$FPGA_TOOLS_MISSING" = true ]; then
+      #       echo "🔧 Manual FPGA tool installation required (VPR not found)..."
+      #       
+      #       # Install openFPGALoader (if not available)
+      #       if ! command -v openFPGALoader &> /dev/null; then
+      #         echo "📦 Installing openFPGALoader..."
+      #         # Install missing dependency first
+      #         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libftdi1-dev || echo "⚠️ libftdi1-dev installation failed"
+      #         
+      #         cd /tmp
+      #         git clone https://github.com/trabucayre/openFPGALoader.git
+      #         cd openFPGALoader
+      #         mkdir build && cd build
+      #         cmake .. -DCMAKE_BUILD_TYPE=Release
+      #         make -j$(nproc)
+      #         sudo make install
+      #         echo "✅ openFPGALoader installed"
+      #       fi
+      #       
+      #       # Install VTR (VPR) manually
+      #       if ! command -v vpr &> /dev/null; then
+      #         echo "📦 Installing VTR (VPR)..."
+      #         cd /tmp
+      #         git clone https://github.com/verilog-to-routing/vtr-verilog-to-routing.git
+      #         cd vtr-verilog-to-routing
+      #         
+      #         # Install dependencies manually if script fails
+      #         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      #           build-essential cmake git wget curl \
+      #           bison flex libreadline-dev gawk tcl-dev libffi-dev \
+      #           graphviz xdot pkg-config python3 libboost-system-dev \
+      #           libboost-python-dev libboost-filesystem-dev zlib1g-dev \
+      #           autoconf python3-pip || echo "⚠️ Some VTR dependencies failed"
+      #         
+      #         # Try to run install script, but continue if it fails
+      #         ./install_dependencies.sh || echo "⚠️ VTR install script failed, continuing with manual build"
+      #         
+      #         mkdir build && cd build
+      #         cmake .. -DCMAKE_BUILD_TYPE=Release
+      #         make -j$(nproc)
+      #         sudo make install
+      #         echo "✅ VTR (VPR) installed"
+      #       fi
+      #       
+      #       # Note: SymbiFlow and OpenFPGA are complex to build and may not be essential for basic FPGA flows
+      #       # They can be installed later if needed for specific FPGA architectures
+      #       echo "ℹ️ Skipping complex FPGA tools (SymbiFlow, OpenFPGA) - focus on core tools"
+      #       
+      #       echo "✅ Manual FPGA tool installation complete"
+      #     else
+      #       echo "✅ FPGA tools already available"
+      #     fi
 
       # Validation step
       - name: Validate project structure
