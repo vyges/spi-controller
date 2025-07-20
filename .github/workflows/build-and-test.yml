@@ -209,15 +209,45 @@ jobs:
             ghdl \
             berkeley-abc \
             gtkwave \
+            slang-dev \
             || echo "⚠️ Optional simulation tools installation failed"
+          
+          # Note: slang-dev provides enhanced SystemVerilog support for Yosys
+          
+          # Install Moosic for Yosys (SystemVerilog support)
+          echo "📦 Installing Moosic for Yosys SystemVerilog support..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            || echo "⚠️ Moosic build dependencies installation failed"
+          
+          # Clone and build Moosic
+          cd /tmp
+          git clone https://github.com/YosysHQ/moosic.git
+          cd moosic
+          mkdir build && cd build
+          cmake ..
+          make -j$(nproc)
+          sudo make install
+          cd /github/workspace
           
           # Layout and verification tools (added based on SiliconCompiler approach)
           echo "📦 Installing layout and verification tools..."
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             magic \
             netgen \
-            klayout \
             || echo "⚠️ Layout tools installation failed"
+          
+          # Install KLayout using SiliconCompiler approach (specific version)
+          echo "📦 Installing KLayout 0.30.2 (SiliconCompiler approach)..."
+          cd /tmp
+          wget -O klayout.deb "https://github.com/KLayout/klayout/releases/download/v0.30.2/klayout_0.30.2-1_amd64.deb" || echo "⚠️ KLayout download failed"
+          if [ -f klayout.deb ]; then
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ./klayout.deb || echo "⚠️ KLayout installation failed"
+            rm klayout.deb
+          fi
+          cd /github/workspace
           
           # FPGA tools (optional)
           echo "📦 Installing FPGA tools..."
@@ -326,6 +356,19 @@ jobs:
           
           if command -v yosys &> /dev/null; then
             echo "✅ Yosys: $(yosys -V | head -1)"
+            # Check available modules
+            echo "🔍 Checking Yosys modules..."
+            yosys -m help 2>/dev/null | grep -E "(slang|abc|fsm|memory|opt|techmap)" || echo "⚠️ Module check failed"
+            
+            # Test Yosys SystemVerilog parsing capability with Slang/Moosic
+            echo "🔍 Testing Yosys SystemVerilog support..."
+            echo 'module test(input logic clk, output logic [7:0] data); assign data = 8\'hAA; endmodule' > /tmp/test.sv
+            yosys -p "read_verilog -sv /tmp/test.sv; stat" 2>/dev/null && echo "✅ Yosys SystemVerilog parsing successful" || echo "⚠️ Yosys SystemVerilog parsing test failed"
+            
+            # Check for slang and moosic support specifically
+            echo "🔍 Checking for Slang and Moosic support..."
+            yosys -p "help" 2>/dev/null | grep -i "slang" && echo "✅ Slang support detected" || echo "ℹ️ Slang support not detected"
+            yosys -p "help" 2>/dev/null | grep -i "moosic" && echo "✅ Moosic support detected" || echo "ℹ️ Moosic support not detected"
           else
             echo "❌ Yosys not found"
           fi
@@ -349,9 +392,11 @@ jobs:
           fi
           
           if command -v klayout &> /dev/null; then
-            echo "✅ KLayout ${{ env.KLAYOUT_VERSION }}: $(klayout -v 2>/dev/null | head -1 || echo 'KLayout available')"
+            echo "✅ KLayout: $(klayout -v 2>/dev/null | head -1 || echo 'KLayout available')"
+            # Verify KLayout version matches SiliconCompiler approach
+            klayout -v 2>/dev/null | grep -q "0.30.2" && echo "✅ KLayout 0.30.2 verified (SiliconCompiler version)" || echo "ℹ️ KLayout version differs from SiliconCompiler (0.30.2)"
           else
-            echo "⚠️ KLayout ${{ env.KLAYOUT_VERSION }} not found (optional for layout viewing)"
+            echo "⚠️ KLayout not found (optional for layout viewing)"
           fi
           
           if command -v nextpnr-ice40 &> /dev/null; then
@@ -404,6 +449,9 @@ jobs:
           
           if command -v openroad &> /dev/null; then
             echo "✅ OpenROAD: $(openroad --version 2>/dev/null | head -1 || echo 'OpenROAD available')"
+            # Verify OpenROAD installation
+            echo "🔍 Verifying OpenROAD installation..."
+            openroad --version || echo "⚠️ OpenROAD verification failed"
           else
             echo "⚠️ OpenROAD not found (optional for advanced synthesis)"
           fi
