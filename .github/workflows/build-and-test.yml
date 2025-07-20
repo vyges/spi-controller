@@ -1165,159 +1165,33 @@ jobs:
           echo "✅ All markdown reports converted to HTML"
           fi
 
-      - name: Generate web-based waveform reports
+      - name: Generate VCD waveform reports
         if: always()
         run: |
-          echo "🌊 Generating web-based waveform reports with Surfer..."
+          echo "Generating VCD waveform reports..."
           
-          # Create waveform viewing directory
+          # Create waveform directory
           mkdir -p public/waveforms
           
-          # Find all VCD files and create web-based viewers
+          # Find all VCD files and copy them to public directory
           find . -name "*.vcd" -type f | while read vcd_file; do
             basename=$(basename "$vcd_file" .vcd)
-            dirname=$(dirname "$vcd_file")
-            
-            echo "🔍 Processing VCD file: $vcd_file"
+            echo "🔍 Processing VCD file: $vcd_file -> ${basename}.vcd"
             
             # Copy VCD file to public directory
             cp "$vcd_file" "public/waveforms/${basename}.vcd"
             
-            # Create HTML viewer page for this VCD file
-            cat > "public/waveforms/${basename}_viewer.html" << EOF
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Vyges SPI Controller - Waveform Viewer: ${basename}</title>
-              <style>
-                  body { 
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-                      margin: 0; 
-                      padding: 20px; 
-                      background: #f8f9fa;
-                  }
-                  .header {
-                      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                      color: white;
-                      padding: 20px;
-                      margin: -20px -20px 20px -20px;
-                      text-align: center;
-                      border-radius: 0 0 15px 15px;
-                  }
-                  .container {
-                      max-width: 1400px;
-                      margin: 0 auto;
-                      background: white;
-                      border-radius: 8px;
-                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                      overflow: hidden;
-                  }
-                  .waveform-container {
-                      width: 100%;
-                      height: 600px;
-                      border: none;
-                  }
-                  .info-panel {
-                      padding: 20px;
-                      background: #f8f9fa;
-                      border-top: 1px solid #e1e4e8;
-                  }
-                  .download-link {
-                      display: inline-block;
-                      background: #0366d6;
-                      color: white;
-                      padding: 8px 16px;
-                      text-decoration: none;
-                      border-radius: 4px;
-                      margin: 5px;
-                  }
-                  .download-link:hover {
-                      background: #0256cc;
-                  }
-                  .back-link {
-                      display: inline-block;
-                      background: #6c757d;
-                      color: white;
-                      padding: 8px 16px;
-                      text-decoration: none;
-                      border-radius: 4px;
-                      margin: 5px;
-                  }
-                  .back-link:hover {
-                      background: #5a6268;
-                  }
-              </style>
-          </head>
-          <body>
-              <div class="header">
-                  <div class="vyges-logo">
-                      <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
-                      <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
-                  </div>
-                  <h1>Vyges SPI Controller - Waveform Viewer</h1>
-                  <p>Interactive VCD waveform analysis for ${basename}</p>
-              </div>
-              
-              <div class="container">
-                                                       <div class="waveform-container" style="border: 2px dashed #ccc; padding: 20px; text-align: center; background: #f8f9fa;">
-                      <h3>Waveform Viewer</h3>
-                      <p>Click the link below to open the waveform in Surfer:</p>
-                      <a href="https://surfer-project.gitlab.io/surfer/?vcd=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd" 
-                         target="_blank" 
-                         class="download-link" 
-                         style="display: inline-block; background: #0366d6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px;">
-                          🌊 Open Waveform in Surfer
-                      </a>
-                      <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                          <em>Note: Opens in a new tab for better compatibility</em>
-                      </p>
-                  </div>
-                  
-                  <div class="info-panel">
-                      <h3>Waveform Information</h3>
-                      <p><strong>File:</strong> ${basename}.vcd</p>
-                      <p><strong>Generated:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
-                      <p><strong>Tool:</strong> Surfer Web-based VCD Viewer</p>
-                      <p><strong>Viewer:</strong> <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a></p>
-                      
-                      <h4>Actions</h4>
-                      <a href="${basename}.vcd" class="download-link" download>📥 Download VCD File</a>
-                      <a href="../index.html" class="back-link">← Back to Reports</a>
-                      
-                      <h4>Viewing Instructions</h4>
-                      <ul>
-                          <li>Use the waveform viewer above to analyze signal timing</li>
-                          <li>Zoom in/out using mouse wheel or zoom controls</li>
-                          <li>Click on signals to highlight them</li>
-                          <li>Download the VCD file for offline analysis with GTKWave</li>
-                      </ul>
-                  </div>
-              </div>
-              
-              <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
-                  <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
-                  <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
-                  <p style="font-size: 12px; margin-top: 10px; color: #6a737d;">
-                      Waveform viewer powered by <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a> - Open source VCD viewer
-                  </p>
-              </div>
-          </body>
-          </html>
-          EOF
-            
-            echo "✅ Created web viewer for ${basename}.vcd"
+            echo "✅ Copied ${basename}.vcd to public/waveforms/"
           done
           
-          # Create waveform index page
+          # Create simple waveform index page
           cat > "public/waveforms/index.html" << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Vyges SPI Controller - Waveform Reports</title>
+              <title>Vyges SPI Controller - VCD Waveform Files</title>
               <style>
                   body { 
                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -1352,17 +1226,17 @@ jobs:
                       margin-top: 0;
                       color: #0366d6;
                   }
-                  .waveform-link {
+                  .download-link {
                       display: inline-block;
-                      background: #0366d6;
+                      background: #28a745;
                       color: white;
                       padding: 8px 16px;
                       text-decoration: none;
                       border-radius: 4px;
                       margin: 5px 0;
                   }
-                  .waveform-link:hover {
-                      background: #0256cc;
+                  .download-link:hover {
+                      background: #218838;
                   }
                   .back-link {
                       display: inline-block;
@@ -1376,6 +1250,13 @@ jobs:
                   .back-link:hover {
                       background: #5a6268;
                   }
+                  .info-box {
+                      background: #e3f2fd;
+                      border: 1px solid #2196f3;
+                      border-radius: 8px;
+                      padding: 20px;
+                      margin: 20px 0;
+                  }
               </style>
           </head>
           <body>
@@ -1384,23 +1265,30 @@ jobs:
                       <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
                       <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
                   </div>
-                  <h1>🌊 Vyges SPI Controller - Waveform Reports</h1>
-                  <p>Interactive VCD waveform analysis and visualization</p>
+                  <h1>Vyges SPI Controller - Waveform Reports</h1>
+                  p>Download VCD files for waveform analysis</p>
               </div>
               
               <a href="../index.html" class="back-link">← Back to Main Reports</a>
               
+              <div class="info-box">
+                  <h3>📋 VCD File Information</h3>
+                  <p><strong>Format:</strong> Value Change Dump (VCD) - Standard waveform format</p>
+                  <p><strong>Generated:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
+                  <p><strong>Usage:</strong> Download and open with GTKWave, Surfer, or other VCD viewers</p>
+              </div>
+              
               <div class="waveform-grid">
           EOF
           
-          # Add waveform cards to index
-          find public/waveforms -name "*_viewer.html" | while read viewer_file; do
-            basename=$(basename "$viewer_file" _viewer.html)
+          # Add VCD file cards to index
+          find public/waveforms -name "*.vcd" | while read vcd_file; do
+            basename=$(basename "$vcd_file" .vcd)
+            filesize=$(ls -lh "$vcd_file" | awk '{print $5}')
             echo "                  <div class=\"waveform-card\">" >> public/waveforms/index.html
             echo "                      <h3>${basename}</h3>" >> public/waveforms/index.html
-            echo "                      <p>Interactive waveform viewer for ${basename} simulation</p>" >> public/waveforms/index.html
-            echo "                      <a href=\"${basename}_viewer.html\" class=\"waveform-link\">🌊 View Waveform</a>" >> public/waveforms/index.html
-            echo "                      <a href=\"${basename}.vcd\" class=\"waveform-link\" download>📥 Download VCD</a>" >> public/waveforms/index.html
+            echo "                      <p>VCD waveform file (${filesize})</p>" >> public/waveforms/index.html
+            echo "                      <a href=\"${basename}.vcd\" class=\"download-link\" download>📥 Download VCD</a>" >> public/waveforms/index.html
             echo "                  </div>" >> public/waveforms/index.html
           done
           
@@ -1408,28 +1296,33 @@ jobs:
           cat >> public/waveforms/index.html << EOF
               </div>
               
-                                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                      <h3>Waveform Analysis Instructions</h3>
-                      <ul>
-                          <li><strong>Interactive Viewing:</strong> Click on any waveform card to open the interactive viewer</li>
-                          <li><strong>Signal Analysis:</strong> Use zoom, pan, and signal highlighting features</li>
-                          <li><strong>Download:</strong> Download VCD files for offline analysis with GTKWave</li>
-                          <li><strong>Cross-Reference:</strong> Compare waveforms with test results in the main reports</li>
-                      </ul>
-                  </div>
+              <div class="info-box">
+                  <h3>🔧 Recommended VCD Viewers</h3>
+                  <ul>
+                      <li><strong>GTKWave:</strong> Open-source waveform viewer (Linux/macOS/Windows)</li>
+                      <li><strong>Surfer:</strong> Web-based VCD viewer (drag & drop VCD files)</li>
+                      <li><strong>Waveform Viewer:</strong> Various commercial tools</li>
+                      <li><strong>VSCode Extensions:</strong> Surfer, GTKWave, or other VCD viewers</li>
+                  </ul>
                   
-                  <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
-                      <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
-                      <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
-                      <p style="font-size: 12px; margin-top: 10px; color: #6a737d;">
-                          Waveform viewer powered by <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a> - Open source VCD viewer
-                      </p>
-                  </div>
-              </body>
-              </html>
+                  <h4>Quick Start:</h4>
+                  <ol>
+                      <li>Download any VCD file using the buttons above</li>
+                      <li>Open with your preferred VCD viewer</li>
+                      <li>Analyze signal timing and behavior</li>
+                      <li>Compare with test results in the main reports</li>
+                  </ol>
+              </div>
+              
+              <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
+                  <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+                  <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
+              </div>
+          </body>
+          </html>
           EOF
           
-          echo "✅ Web-based waveform reports generated successfully"
+          echo "✅ VCD waveform reports generated successfully"
 
       # Generate basic test harness report
       - name: Generate basic test harness report
