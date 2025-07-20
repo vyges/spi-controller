@@ -241,6 +241,27 @@ jobs:
             fi
           fi
           
+          # Manual FPGA tool installation (inspired by F4PGA AArch64 guide)
+          echo "🔧 Setting up manual FPGA tool installation..."
+          export F4PGA_INSTALL_DIR="/opt/f4pga"
+          sudo mkdir -p $F4PGA_INSTALL_DIR
+          export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
+          
+          # Install additional build dependencies for FPGA tools
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            clang \
+            libftdi1-dev \
+            autoconf \
+            swig \
+            uuid-dev \
+            python3-orderedmultidict \
+            python3-psutil \
+            python3-dev \
+            default-jre \
+            lcov \
+            libantlr4-runtime-dev \
+            Cython || echo "⚠️ Some FPGA build dependencies failed"
+          
           # Fallback: Try alternative installation method if standard method failed
           if ! command -v verilator &> /dev/null || ! command -v iverilog &> /dev/null || ! command -v yosys &> /dev/null; then
             echo "⚠️ Some tools not found, trying alternative installation method..."
@@ -337,18 +358,30 @@ jobs:
             echo "✅ SymbiFlow ${{ env.SYMBIFLOW_VERSION }}: $(symbiflow_synth --version 2>/dev/null | head -1 || echo 'SymbiFlow available')"
           else
             echo "⚠️ SymbiFlow ${{ env.SYMBIFLOW_VERSION }} not found (optional for FPGA flow)"
+            # Check for manually installed components
+            if [ -f "/opt/f4pga/bin/symbiflow_synth" ]; then
+              echo "✅ SymbiFlow found in manual installation"
+            fi
           fi
           
           if command -v vpr &> /dev/null; then
             echo "✅ VPR ${{ env.VPR_VERSION }}: $(vpr --version 2>/dev/null | head -1 || echo 'VPR available')"
           else
             echo "⚠️ VPR ${{ env.VPR_VERSION }} not found (optional for FPGA architecture)"
+            # Check for manually installed components
+            if [ -f "/usr/local/bin/vpr" ]; then
+              echo "✅ VPR found in manual installation"
+            fi
           fi
           
           if command -v openfpga &> /dev/null; then
             echo "✅ OpenFPGA ${{ env.OPENFPGA_VERSION }}: $(openfpga --version 2>/dev/null | head -1 || echo 'OpenFPGA available')"
           else
             echo "⚠️ OpenFPGA ${{ env.OPENFPGA_VERSION }} not found (optional for FPGA architecture)"
+            # Check for manually installed components
+            if [ -f "/usr/local/bin/openfpga" ]; then
+              echo "✅ OpenFPGA found in manual installation"
+            fi
           fi
           
           if command -v node &> /dev/null; then
@@ -478,6 +511,97 @@ jobs:
           fi
           
           echo "🌊 Surfer web-based VCD viewer setup complete"
+
+      # Manual FPGA tool installation (for AArch64 compatibility)
+      - name: Install FPGA tools manually
+        run: |
+          echo "🔧 Installing FPGA tools manually for AArch64 compatibility..."
+          
+          # Set up environment
+          export F4PGA_INSTALL_DIR="/opt/f4pga"
+          export PATH="$PATH:$F4PGA_INSTALL_DIR/bin"
+          export PYTHONPATH="$PYTHONPATH:$F4PGA_INSTALL_DIR/lib/python3.*/site-packages"
+          
+          # Check if we need manual installation
+          FPGA_TOOLS_MISSING=false
+          if ! command -v symbiflow_synth &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
+          if ! command -v vpr &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
+          if ! command -v openfpga &> /dev/null; then FPGA_TOOLS_MISSING=true; fi
+          
+          if [ "$FPGA_TOOLS_MISSING" = true ]; then
+            echo "🔧 Manual FPGA tool installation required..."
+            
+            # Install openFPGALoader (if not available)
+            if ! command -v openFPGALoader &> /dev/null; then
+              echo "📦 Installing openFPGALoader..."
+              cd /tmp
+              git clone https://github.com/trabucayre/openFPGALoader.git
+              cd openFPGALoader
+              mkdir build && cd build
+              cmake .. -DCMAKE_BUILD_TYPE=Release
+              make -j$(nproc)
+              sudo make install
+              echo "✅ openFPGALoader installed"
+            fi
+            
+            # Install VTR (VPR) manually
+            if ! command -v vpr &> /dev/null; then
+              echo "📦 Installing VTR (VPR)..."
+              cd /tmp
+              git clone https://github.com/verilog-to-routing/vtr-verilog-to-routing.git
+              cd vtr-verilog-to-routing
+              ./install_dependencies.sh
+              make -j$(nproc)
+              sudo make install
+              echo "✅ VTR (VPR) installed"
+            fi
+            
+            # Install SymbiFlow tools manually
+            if ! command -v symbiflow_synth &> /dev/null; then
+              echo "📦 Installing SymbiFlow tools..."
+              cd /tmp
+              
+              # Install prjxray-db
+              git clone https://github.com/f4pga/prjxray-db.git
+              cd prjxray-db
+              make -j$(nproc)
+              sudo make install
+              cd ..
+              
+              # Install prjxray-tools
+              git clone https://github.com/f4pga/prjxray-tools.git
+              cd prjxray-tools
+              make -j$(nproc)
+              sudo make install
+              cd ..
+              
+              # Install symbiflow-yosys-plugins
+              git clone https://github.com/f4pga/symbiflow-yosys-plugins.git
+              cd symbiflow-yosys-plugins
+              make -j$(nproc)
+              sudo make install
+              cd ..
+              
+              echo "✅ SymbiFlow tools installed"
+            fi
+            
+            # Install OpenFPGA manually
+            if ! command -v openfpga &> /dev/null; then
+              echo "📦 Installing OpenFPGA..."
+              cd /tmp
+              git clone https://github.com/LNIS-Projects/OpenFPGA.git
+              cd OpenFPGA
+              mkdir build && cd build
+              cmake .. -DCMAKE_BUILD_TYPE=Release
+              make -j$(nproc)
+              sudo make install
+              echo "✅ OpenFPGA installed"
+            fi
+            
+            echo "✅ Manual FPGA tool installation complete"
+          else
+            echo "✅ FPGA tools already available"
+          fi
 
       # Validation step
       - name: Validate project structure
@@ -1152,22 +1276,27 @@ jobs:
           </head>
           <body>
               <div class="header">
+                  <div class="vyges-logo">
+                      <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
+                      <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
+                  </div>
                   <h1>🌊 Vyges SPI Controller - Waveform Viewer</h1>
                   <p>Interactive VCD waveform analysis for ${basename}</p>
               </div>
               
               <div class="container">
-                                     <iframe class="waveform-container" 
-                           src="https://surfer-project.gitlab.io/surfer/?vcd=${basename}.vcd"
-                           title="Waveform Viewer"
-                           sandbox="allow-scripts allow-same-origin allow-forms">
-                   </iframe>
+                                                       <iframe class="waveform-container" 
+                          src="https://surfer-project.gitlab.io/surfer/?vcd=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/waveforms/${basename}.vcd"
+                          title="Waveform Viewer"
+                          sandbox="allow-scripts allow-same-origin allow-forms">
+                  </iframe>
                   
                   <div class="info-panel">
                       <h3>Waveform Information</h3>
                       <p><strong>File:</strong> ${basename}.vcd</p>
                       <p><strong>Generated:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
                       <p><strong>Tool:</strong> Surfer Web-based VCD Viewer</p>
+                      <p><strong>Viewer:</strong> <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a></p>
                       
                       <h4>Actions</h4>
                       <a href="${basename}.vcd" class="download-link" download>📥 Download VCD File</a>
@@ -1181,6 +1310,14 @@ jobs:
                           <li>Download the VCD file for offline analysis with GTKWave</li>
                       </ul>
                   </div>
+              </div>
+              
+              <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
+                  <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+                  <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
+                  <p style="font-size: 12px; margin-top: 10px; color: #6a737d;">
+                      Waveform viewer powered by <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a> - Open source VCD viewer
+                  </p>
               </div>
           </body>
           </html>
@@ -1259,6 +1396,10 @@ jobs:
           </head>
           <body>
               <div class="header">
+                  <div class="vyges-logo">
+                      <img src="https://github.com/vyges.png" alt="Vyges Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; vertical-align: middle; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 3px solid rgba(255,255,255,0.2);">
+                      <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
+                  </div>
                   <h1>🌊 Vyges SPI Controller - Waveform Reports</h1>
                   <p>Interactive VCD waveform analysis and visualization</p>
               </div>
@@ -1283,17 +1424,25 @@ jobs:
           cat >> public/waveforms/index.html << EOF
               </div>
               
-              <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                  <h3>Waveform Analysis Instructions</h3>
-                  <ul>
-                      <li><strong>Interactive Viewing:</strong> Click on any waveform card to open the interactive viewer</li>
-                      <li><strong>Signal Analysis:</strong> Use zoom, pan, and signal highlighting features</li>
-                      <li><strong>Download:</strong> Download VCD files for offline analysis with GTKWave</li>
-                      <li><strong>Cross-Reference:</strong> Compare waveforms with test results in the main reports</li>
-                  </ul>
-              </div>
-          </body>
-          </html>
+                                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                      <h3>Waveform Analysis Instructions</h3>
+                      <ul>
+                          <li><strong>Interactive Viewing:</strong> Click on any waveform card to open the interactive viewer</li>
+                          <li><strong>Signal Analysis:</strong> Use zoom, pan, and signal highlighting features</li>
+                          <li><strong>Download:</strong> Download VCD files for offline analysis with GTKWave</li>
+                          <li><strong>Cross-Reference:</strong> Compare waveforms with test results in the main reports</li>
+                      </ul>
+                  </div>
+                  
+                  <div class="vyges-footer" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e1e4e8; text-align: center; color: #586069;">
+                      <p>Powered by <strong>Vyges</strong> - Build IP Not Boilerplate</p>
+                      <p>© 2025 Vyges, Inc. All rights reserved. | <a href="https://github.com/vyges" target="_blank" style="color: #0366d6;">GitHub</a> | <a href="https://vyges.com" target="_blank" style="color: #0366d6;">Website</a></p>
+                      <p style="font-size: 12px; margin-top: 10px; color: #6a737d;">
+                          Waveform viewer powered by <a href="https://surfer-project.org" target="_blank" style="color: #0366d6;">Surfer Project</a> - Open source VCD viewer
+                      </p>
+                  </div>
+              </body>
+              </html>
           EOF
           
           echo "✅ Web-based waveform reports generated successfully"
