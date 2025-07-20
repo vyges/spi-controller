@@ -1209,22 +1209,31 @@ jobs:
                       text-align: center;
                       border-radius: 0 0 15px 15px;
                   }
-                  .waveform-grid {
-                      display: grid;
-                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                      gap: 20px;
+                  .waveform-table {
+                      width: 100%;
+                      border-collapse: collapse;
                       margin: 20px 0;
-                  }
-                  .waveform-card {
                       background: white;
-                      border: 1px solid #e1e4e8;
                       border-radius: 8px;
-                      padding: 20px;
+                      overflow: hidden;
                       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                   }
-                  .waveform-card h3 {
-                      margin-top: 0;
-                      color: #0366d6;
+                  .waveform-table th,
+                  .waveform-table td {
+                      padding: 12px 16px;
+                      text-align: left;
+                      border-bottom: 1px solid #e1e4e8;
+                  }
+                  .waveform-table th {
+                      background: #f6f8fa;
+                      font-weight: 600;
+                      color: #24292e;
+                  }
+                  .waveform-table tr:hover {
+                      background: #f8f9fa;
+                  }
+                  .waveform-table tr:last-child td {
+                      border-bottom: none;
                   }
                   .download-link {
                       display: inline-block;
@@ -1266,7 +1275,7 @@ jobs:
                       <span style="vertical-align: middle; font-size: 24px; font-weight: bold;">vyges</span>
                   </div>
                   <h1>Vyges SPI Controller - Waveform Reports</h1>
-                  p>Download VCD files for waveform analysis</p>
+                  <p>Download VCD files for waveform analysis</p>
               </div>
               
               <a href="../index.html" class="back-link">← Back to Main Reports</a>
@@ -1278,23 +1287,32 @@ jobs:
                   <p><strong>Usage:</strong> Download and open with GTKWave, Surfer, or other VCD viewers</p>
               </div>
               
-              <div class="waveform-grid">
+              <table class="waveform-table">
+                  <thead>
+                      <tr>
+                          <th>VCD File</th>
+                          <th>Size</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
           EOF
           
-          # Add VCD file cards to index
+          # Add VCD file rows to table
           find public/waveforms -name "*.vcd" | while read vcd_file; do
             basename=$(basename "$vcd_file" .vcd)
             filesize=$(ls -lh "$vcd_file" | awk '{print $5}')
-            echo "                  <div class=\"waveform-card\">" >> public/waveforms/index.html
-            echo "                      <h3>${basename}</h3>" >> public/waveforms/index.html
-            echo "                      <p>VCD waveform file (${filesize})</p>" >> public/waveforms/index.html
-            echo "                      <a href=\"${basename}.vcd\" class=\"download-link\" download>📥 Download VCD</a>" >> public/waveforms/index.html
-            echo "                  </div>" >> public/waveforms/index.html
+            echo "                      <tr>" >> public/waveforms/index.html
+            echo "                          <td><strong>${basename}.vcd</strong></td>" >> public/waveforms/index.html
+            echo "                          <td>${filesize}</td>" >> public/waveforms/index.html
+            echo "                          <td><a href=\"${basename}.vcd\" class=\"download-link\" download>📥 Download</a></td>" >> public/waveforms/index.html
+            echo "                      </tr>" >> public/waveforms/index.html
           done
           
-          # Close HTML
+          # Close table and HTML
           cat >> public/waveforms/index.html << EOF
-              </div>
+                  </tbody>
+              </table>
               
               <div class="info-box">
                   <h3>🔧 Recommended VCD Viewers</h3>
@@ -1621,7 +1639,7 @@ jobs:
                       </tr>
                       <tr class="test-verification">
                           <td><strong>🌊 Waveform Analysis</strong></td>
-                          <td>Interactive VCD waveform analysis using Surfer web-based viewer for debugging and signal analysis.</td>
+                          <td>VCD waveform analysis for debugging and signal analysis.</td>
                           <td>
                               <a href="./waveforms/index.html" class="report-link html">🌊 Waveforms</a>
                           </td>
