@@ -219,6 +219,28 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs || echo "⚠️ Node.js installation failed"
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y npm || echo "⚠️ NPM installation failed"
           
+          # Install pandoc specifically (required for HTML conversion)
+          echo "📝 Installing pandoc for HTML report generation..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y pandoc || echo "⚠️ Pandoc installation failed, trying alternative method"
+          
+          # Alternative pandoc installation if apt fails
+          if ! command -v pandoc &> /dev/null; then
+            echo "🔧 Trying alternative pandoc installation..."
+            # Try installing from different package names
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y pandoc-core || echo "⚠️ pandoc-core installation failed"
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y pandoc-data || echo "⚠️ pandoc-data installation failed"
+            
+            # Try installing via snap if available
+            if command -v snap &> /dev/null; then
+              sudo snap install pandoc --classic || echo "⚠️ Snap pandoc installation failed"
+            fi
+            
+            # Try installing via conda if available
+            if command -v conda &> /dev/null; then
+              conda install -c conda-forge pandoc -y || echo "⚠️ Conda pandoc installation failed"
+            fi
+          fi
+          
           # Fallback: Try alternative installation method if standard method failed
           if ! command -v verilator &> /dev/null || ! command -v iverilog &> /dev/null || ! command -v yosys &> /dev/null; then
             echo "⚠️ Some tools not found, trying alternative installation method..."
@@ -933,8 +955,33 @@ jobs:
           
           # Convert test harness report to HTML
           if [ -f "public/test_harness_report.md" ]; then
-            pandoc public/test_harness_report.md -o public/test_harness_report.html --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - Test Harness Report" --include-after-body=public/vyges-footer.html
-            echo "✅ Converted test harness report to HTML"
+            if command -v pandoc &> /dev/null; then
+              pandoc public/test_harness_report.md -o public/test_harness_report.html --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - Test Harness Report" --include-after-body=public/vyges-footer.html
+              echo "✅ Converted test harness report to HTML with pandoc"
+            else
+              echo "⚠️ Pandoc not found, creating basic HTML report..."
+              # Create a basic HTML report without pandoc
+              cat > public/test_harness_report.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller IP - Test Harness Report</title>
+              <link rel="stylesheet" href="report-style.css">
+          </head>
+          <body>
+              <h1>Vyges SPI Controller IP - Test Harness Report</h1>
+              <p><em>Generated: $(date -u)</em></p>
+              <div class="highlight">
+                  <p><strong>Note:</strong> This is a basic HTML report generated without pandoc. For full formatting, install pandoc.</p>
+              </div>
+              <pre><code>$(cat public/test_harness_report.md)</code></pre>
+          </body>
+          </html>
+          EOF
+              echo "✅ Created basic HTML report (pandoc not available)"
+            fi
           fi
           
           # Convert ASIC reports to HTML
@@ -946,8 +993,32 @@ jobs:
                 basename=$(basename "$file" .md)
                 echo "🔍 Debug: Converting $file to public/asic/${basename}.html"
                 echo "🔍 Debug: Footer path check: $(ls -la public/vyges-footer.html 2>/dev/null || echo 'Footer not found at public/vyges-footer.html')"
-                pandoc "$file" -o "public/asic/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
-                echo "✅ Converted $file to HTML"
+                if command -v pandoc &> /dev/null; then
+                  pandoc "$file" -o "public/asic/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
+                  echo "✅ Converted $file to HTML with pandoc"
+                else
+                  echo "⚠️ Pandoc not found, creating basic HTML for $file..."
+                  cat > "public/asic/${basename}.html" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller IP - ${basename}</title>
+              <link rel="stylesheet" href="../report-style.css">
+          </head>
+          <body>
+              <h1>Vyges SPI Controller IP - ${basename}</h1>
+              <p><em>Generated: $(date -u)</em></p>
+              <div class="highlight">
+                  <p><strong>Note:</strong> This is a basic HTML report generated without pandoc. For full formatting, install pandoc.</p>
+              </div>
+              <pre><code>$(cat "$file")</code></pre>
+          </body>
+          </html>
+          EOF
+                  echo "✅ Created basic HTML for $file (pandoc not available)"
+                fi
               fi
             done
           fi
@@ -961,8 +1032,32 @@ jobs:
                 basename=$(basename "$file" .md)
                 echo "🔍 Debug: Converting $file to public/fpga/${basename}.html"
                 echo "🔍 Debug: Footer path check: $(ls -la public/vyges-footer.html 2>/dev/null || echo 'Footer not found at public/vyges-footer.html')"
-                pandoc "$file" -o "public/fpga/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
-                echo "✅ Converted $file to HTML"
+                if command -v pandoc &> /dev/null; then
+                  pandoc "$file" -o "public/fpga/${basename}.html" --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - ${basename}" --include-after-body=public/vyges-footer.html
+                  echo "✅ Converted $file to HTML with pandoc"
+                else
+                  echo "⚠️ Pandoc not found, creating basic HTML for $file..."
+                  cat > "public/fpga/${basename}.html" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller IP - ${basename}</title>
+              <link rel="stylesheet" href="../report-style.css">
+          </head>
+          <body>
+              <h1>Vyges SPI Controller IP - ${basename}</h1>
+              <p><em>Generated: $(date -u)</em></p>
+              <div class="highlight">
+                  <p><strong>Note:</strong> This is a basic HTML report generated without pandoc. For full formatting, install pandoc.</p>
+              </div>
+              <pre><code>$(cat "$file")</code></pre>
+          </body>
+          </html>
+          EOF
+                  echo "✅ Created basic HTML for $file (pandoc not available)"
+                fi
               fi
             done
           fi
