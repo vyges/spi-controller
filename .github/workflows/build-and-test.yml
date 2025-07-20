@@ -212,30 +212,31 @@ jobs:
           echo "📦 Installing optional simulation tools..."
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             ghdl \
-            berkeley-abc \
             gtkwave \
-            slang-dev \
             || echo "⚠️ Optional simulation tools installation failed"
           
-          # Note: slang-dev provides enhanced SystemVerilog support for Yosys
+          # Note: berkeley-abc, slang-dev, and moosic commented out due to package availability issues
+          # - berkeley-abc: Not available in Ubuntu 24.04 repositories
+          # - slang-dev: Not available in Ubuntu 24.04 repositories  
+          # - moosic: Git clone authentication issues in CI environment
           
-          # Install Moosic for Yosys (SystemVerilog support)
-          echo "📦 Installing Moosic for Yosys SystemVerilog support..."
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential \
-            cmake \
-            git \
-            || echo "⚠️ Moosic build dependencies installation failed"
-          
-          # Clone and build Moosic
-          cd /tmp
-          git clone https://github.com/YosysHQ/moosic.git
-          cd moosic
-          mkdir build && cd build
-          cmake ..
-          make -j$(nproc)
-          sudo make install
-          cd /github/workspace
+          # # Install Moosic for Yosys (SystemVerilog support) - DISABLED
+          # echo "📦 Installing Moosic for Yosys SystemVerilog support..."
+          # sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+          #   build-essential \
+          #   cmake \
+          #   git \
+          #   || echo "⚠️ Moosic build dependencies installation failed"
+          # 
+          # # Clone and build Moosic
+          # cd /tmp
+          # git clone https://github.com/YosysHQ/moosic.git
+          # cd moosic
+          # mkdir build && cd build
+          # cmake ..
+          # make -j$(nproc)
+          # sudo make install
+          # cd /github/workspace
           
           # Layout and verification tools (added based on SiliconCompiler approach)
           echo "📦 Installing layout and verification tools..."
@@ -365,15 +366,13 @@ jobs:
             echo "🔍 Checking Yosys modules..."
             yosys -m help 2>/dev/null | grep -E "(slang|abc|fsm|memory|opt|techmap)" || echo "⚠️ Module check failed"
             
-            # Test Yosys SystemVerilog parsing capability with Slang/Moosic
+            # Test Yosys SystemVerilog parsing capability (basic support)
             echo "🔍 Testing Yosys SystemVerilog support..."
             echo 'module test(input logic clk, output logic [7:0] data); assign data = 8\'hAA; endmodule' > /tmp/test.sv
             yosys -p "read_verilog -sv /tmp/test.sv; stat" 2>/dev/null && echo "✅ Yosys SystemVerilog parsing successful" || echo "⚠️ Yosys SystemVerilog parsing test failed"
             
-            # Check for slang and moosic support specifically
-            echo "🔍 Checking for Slang and Moosic support..."
-            yosys -p "help" 2>/dev/null | grep -i "slang" && echo "✅ Slang support detected" || echo "ℹ️ Slang support not detected"
-            yosys -p "help" 2>/dev/null | grep -i "moosic" && echo "✅ Moosic support detected" || echo "ℹ️ Moosic support not detected"
+            # Note: Slang and Moosic support disabled due to package availability issues
+            echo "ℹ️ Slang and Moosic support disabled (packages not available in Ubuntu 24.04)"
           else
             echo "❌ Yosys not found"
           fi
