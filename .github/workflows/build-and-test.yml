@@ -85,6 +85,7 @@ jobs:
       GHDL_VERSION: "latest"           # GHDL version (e.g., "latest", "4.0")
       GTKWAVE_VERSION: "latest"        # GTKWave version (e.g., "latest", "3.3")
       SURFER_VERSION: "latest"         # Surfer web-based VCD viewer (e.g., "latest", "1.0")
+      PANDOC_VERSION: "latest"         # Pandoc markdown converter (e.g., "latest", "3.0")
       
       # Synthesis Tools
       YOSYS_VERSION: "latest"          # Yosys version (e.g., "latest", "0.34")
@@ -208,7 +209,11 @@ jobs:
               # Install web-based tools
               nodejs \
               npm \
-              pandoc -o Dpkg::Lock::Timeout=60; then
+              pandoc \
+              texlive-latex-base \
+              texlive-fonts-recommended \
+              texlive-extra-utils \
+              texlive-latex-extra -o Dpkg::Lock::Timeout=60; then
               echo "apt-get install successful"
               break
             else
@@ -333,6 +338,12 @@ jobs:
             echo "✅ NPM: $(npm --version)"
           else
             echo "⚠️ NPM not found (optional for web-based tools)"
+          fi
+          
+          if command -v pandoc &> /dev/null; then
+            echo "✅ Pandoc ${{ env.PANDOC_VERSION }}: $(pandoc --version | head -1)"
+          else
+            echo "⚠️ Pandoc ${{ env.PANDOC_VERSION }} not found (required for HTML conversion)"
           fi
           
           if command -v gtkwave &> /dev/null; then
