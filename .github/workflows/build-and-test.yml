@@ -531,13 +531,8 @@ jobs:
             echo "⚠️ lm-sensors not found (optional for thermal monitoring)"
           fi
           
-          # Python chiplet packages verification
-          echo "🔍 Verifying Python chiplet packages..."
-          $PYTHON_CMD -c "import yaml; print('✅ PyYAML available')" 2>/dev/null || echo "⚠️ PyYAML not found"
-          $PYTHON_CMD -c "import networkx; print('✅ NetworkX available')" 2>/dev/null || echo "⚠️ NetworkX not found"
-          $PYTHON_CMD -c "import matplotlib; print('✅ Matplotlib available')" 2>/dev/null || echo "⚠️ Matplotlib not found"
-          $PYTHON_CMD -c "import numpy; print('✅ NumPy available')" 2>/dev/null || echo "⚠️ NumPy not found"
-          $PYTHON_CMD -c "import scipy; print('✅ SciPy available')" 2>/dev/null || echo "⚠️ SciPy not found"
+          # Python chiplet packages verification (will be done after chiplet tools installation)
+          echo "ℹ️ Python chiplet packages verification will be done after installation"
           
           if command -v dot &> /dev/null; then
             echo "✅ Graphviz: $(dot -V | head -1)"
@@ -727,7 +722,6 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libeigen3-dev \
-            libcudd-dev \
             || echo "⚠️ Some build dependencies failed"
           
           # 5. OpenTimer (High-performance static timing analysis)
@@ -762,7 +756,7 @@ jobs:
               mkdir build && cd build
               # Set Eigen3 path explicitly and disable CUDD if not available
               export EIGEN3_INCLUDE_DIR=/usr/include/eigen3
-              cmake .. -DEIGEN3_INCLUDE_DIR=$EIGEN3_INCLUDE_DIR -DCUDD=OFF || echo "⚠️ OpenSTA cmake failed"
+              cmake .. -DEIGEN3_INCLUDE_DIR=$EIGEN3_INCLUDE_DIR -DCUDD=OFF -DEIGEN3_NO_AUTOLINK=ON || echo "⚠️ OpenSTA cmake failed"
               make -j$(nproc) || echo "⚠️ OpenSTA build failed"
               sudo make install || echo "⚠️ OpenSTA install failed"
               echo "✅ OpenSTA installation completed via manual build"
@@ -810,6 +804,18 @@ jobs:
             || echo "⚠️ Yosys ABC installation failed"
           
           echo "✅ Chiplet Development Tools installation complete"
+          
+          # Verify Python chiplet packages after installation
+          echo "🔍 Verifying Python chiplet packages after installation..."
+          if command -v python3 &> /dev/null; then
+            python3 -c "import yaml; print('✅ PyYAML available')" 2>/dev/null || echo "⚠️ PyYAML not found"
+            python3 -c "import networkx; print('✅ NetworkX available')" 2>/dev/null || echo "⚠️ NetworkX not found"
+            python3 -c "import matplotlib; print('✅ Matplotlib available')" 2>/dev/null || echo "⚠️ Matplotlib not found"
+            python3 -c "import numpy; print('✅ NumPy available')" 2>/dev/null || echo "⚠️ NumPy not found"
+            python3 -c "import scipy; print('✅ SciPy available')" 2>/dev/null || echo "⚠️ SciPy not found"
+          else
+            echo "⚠️ Python3 not available for package verification"
+          fi
 
       # Manual FPGA tool installation (fallback for apt package issues) - DISABLED
       # - name: Install FPGA tools manually
