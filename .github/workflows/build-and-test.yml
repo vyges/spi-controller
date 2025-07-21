@@ -611,8 +611,8 @@ jobs:
           echo "🔍 Detected Python version: $PYTHON_VERSION_DETECTED"
           
           # Set up Python paths dynamically
-          export PYTHONPATH="/usr/lib/python$PYTHON_VERSION_DETECTED/dist-packages:/usr/local/lib/python$PYTHON_VERSION_DETECTED/dist-packages:$PYTHONPATH"
-          export PYTHONNOUSERSITE=1
+          export PYTHONPATH="/usr/lib/python$PYTHON_VERSION_DETECTED/dist-packages:/usr/local/lib/python$PYTHON_VERSION_DETECTED/dist-packages:$HOME/.local/lib/python$PYTHON_VERSION_DETECTED/site-packages:$PYTHONPATH"
+          export PYTHONNOUSERSITE=0
           export PYTHONUNBUFFERED=1
           export PYTHON_CMD="$PYTHON_CMD"
           export PIP_CMD="$PIP_CMD"
@@ -668,15 +668,31 @@ jobs:
           # Try apt installation first
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y julia || echo "⚠️ Julia apt installation failed, trying snap method"
           
-          # Alternative: Install Julia via snap
-          if ! command -v julia &> /dev/null; then
+          # Check if Julia was installed via apt
+          if command -v julia &> /dev/null; then
+            echo "✅ Julia installation completed via apt package"
+          else
+            # Alternative: Install Julia via snap
             echo "🔧 Installing Julia via snap..."
-            sudo snap install julia --classic || echo "⚠️ Julia snap installation failed"
-            if command -v julia &> /dev/null; then
-              echo "✅ Julia installation completed via snap"
+            if command -v snap &> /dev/null; then
+              sudo snap install julia --classic
+              if command -v julia &> /dev/null; then
+                echo "✅ Julia installation completed via snap"
+              else
+                echo "⚠️ Julia snap installation failed"
+              fi
             else
-              echo "⚠️ Julia installation failed via all methods"
+              echo "⚠️ snap not available, Julia installation failed"
             fi
+          fi
+          
+          # Verify Julia installation
+          echo "🔍 Verifying Julia installation..."
+          if command -v julia &> /dev/null; then
+            julia --version || echo "⚠️ Julia version check failed"
+            echo "✅ Julia is available and working"
+          else
+            echo "❌ Julia installation failed - tool not found"
           fi
           
           # Medium Priority Tools (Important for Advanced Features)
@@ -711,6 +727,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libeigen3-dev \
+            libcudd-dev \
             || echo "⚠️ Some build dependencies failed"
           
           # 5. OpenTimer (High-performance static timing analysis)
@@ -729,23 +746,23 @@ jobs:
           
           # 6. OpenSTA (Open-source static timing analyzer)
           echo "🔧 Installing OpenSTA for static timing analysis..."
-          # Install OpenSTA from Ubuntu package
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y opensta || echo "⚠️ OpenSTA apt installation failed"
+          # Try to install OpenSTA from Ubuntu package (may not be available in all versions)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y opensta 2>/dev/null || echo "⚠️ OpenSTA package not available in this Ubuntu version"
           
           # Verify installation
           if command -v sta &> /dev/null; then
             echo "✅ OpenSTA installation completed via apt package"
           else
-            echo "⚠️ OpenSTA installation failed via apt, trying manual build..."
+            echo "⚠️ OpenSTA not available via apt, trying manual build..."
             # Fallback to manual build if apt fails
             cd /tmp
             git clone https://github.com/The-OpenROAD-Project/OpenSTA.git || echo "⚠️ OpenSTA clone failed"
             if [ -d "OpenSTA" ]; then
               cd OpenSTA
               mkdir build && cd build
-              # Set Eigen3 path explicitly
+              # Set Eigen3 path explicitly and disable CUDD if not available
               export EIGEN3_INCLUDE_DIR=/usr/include/eigen3
-              cmake .. -DEIGEN3_INCLUDE_DIR=$EIGEN3_INCLUDE_DIR || echo "⚠️ OpenSTA cmake failed"
+              cmake .. -DEIGEN3_INCLUDE_DIR=$EIGEN3_INCLUDE_DIR -DCUDD=OFF || echo "⚠️ OpenSTA cmake failed"
               make -j$(nproc) || echo "⚠️ OpenSTA build failed"
               sudo make install || echo "⚠️ OpenSTA install failed"
               echo "✅ OpenSTA installation completed via manual build"
@@ -753,12 +770,21 @@ jobs:
             cd $GITHUB_WORKSPACE
           fi
           
+          # Verify OpenSTA installation
+          echo "🔍 Verifying OpenSTA installation..."
+          if command -v sta &> /dev/null; then
+            sta --version 2>/dev/null || echo "⚠️ OpenSTA version check failed"
+            echo "✅ OpenSTA is available and working"
+          else
+            echo "❌ OpenSTA installation failed - tool not found"
+          fi
+          
           # Low Priority Tools (Nice to Have)
           echo "📦 Installing Low Priority Chiplet Tools..."
           
           # 7. Additional Python packages for chiplet analysis
           echo "🔧 Installing Python chiplet analysis packages..."
-          $PIP_CMD install \
+          $PIP_CMD install --user \
             pyyaml \
             networkx \
             matplotlib \
