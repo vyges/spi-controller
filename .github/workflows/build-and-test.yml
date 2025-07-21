@@ -665,9 +665,19 @@ jobs:
           
           # 3. Julia for PowerModels.jl
           echo "🔧 Installing Julia for PowerModels.jl..."
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            julia \
-            || echo "⚠️ Julia installation failed"
+          # Try apt installation first
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y julia || echo "⚠️ Julia apt installation failed, trying snap method"
+          
+          # Alternative: Install Julia via snap
+          if ! command -v julia &> /dev/null; then
+            echo "🔧 Installing Julia via snap..."
+            sudo snap install julia --classic || echo "⚠️ Julia snap installation failed"
+            if command -v julia &> /dev/null; then
+              echo "✅ Julia installation completed via snap"
+            else
+              echo "⚠️ Julia installation failed via all methods"
+            fi
+          fi
           
           # Medium Priority Tools (Important for Advanced Features)
           echo "📦 Installing Medium Priority Chiplet Tools..."
@@ -700,6 +710,7 @@ jobs:
             libxcb-render0-dev \
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
+            libeigen3-dev \
             || echo "⚠️ Some build dependencies failed"
           
           # 5. OpenTimer (High-performance static timing analysis)
@@ -718,17 +729,29 @@ jobs:
           
           # 6. OpenSTA (Open-source static timing analyzer)
           echo "🔧 Installing OpenSTA for static timing analysis..."
-          cd /tmp
-          git clone https://github.com/The-OpenROAD-Project/OpenSTA.git || echo "⚠️ OpenSTA clone failed"
-          if [ -d "OpenSTA" ]; then
-            cd OpenSTA
-            mkdir build && cd build
-            cmake .. || echo "⚠️ OpenSTA cmake failed"
-            make -j$(nproc) || echo "⚠️ OpenSTA build failed"
-            sudo make install || echo "⚠️ OpenSTA install failed"
-            echo "✅ OpenSTA installation completed"
+          # Install OpenSTA from Ubuntu package
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y opensta || echo "⚠️ OpenSTA apt installation failed"
+          
+          # Verify installation
+          if command -v sta &> /dev/null; then
+            echo "✅ OpenSTA installation completed via apt package"
+          else
+            echo "⚠️ OpenSTA installation failed via apt, trying manual build..."
+            # Fallback to manual build if apt fails
+            cd /tmp
+            git clone https://github.com/The-OpenROAD-Project/OpenSTA.git || echo "⚠️ OpenSTA clone failed"
+            if [ -d "OpenSTA" ]; then
+              cd OpenSTA
+              mkdir build && cd build
+              # Set Eigen3 path explicitly
+              export EIGEN3_INCLUDE_DIR=/usr/include/eigen3
+              cmake .. -DEIGEN3_INCLUDE_DIR=$EIGEN3_INCLUDE_DIR || echo "⚠️ OpenSTA cmake failed"
+              make -j$(nproc) || echo "⚠️ OpenSTA build failed"
+              sudo make install || echo "⚠️ OpenSTA install failed"
+              echo "✅ OpenSTA installation completed via manual build"
+            fi
+            cd $GITHUB_WORKSPACE
           fi
-          cd $GITHUB_WORKSPACE
           
           # Low Priority Tools (Nice to Have)
           echo "📦 Installing Low Priority Chiplet Tools..."
@@ -736,14 +759,16 @@ jobs:
           # 7. Additional Python packages for chiplet analysis
           echo "🔧 Installing Python chiplet analysis packages..."
           $PIP_CMD install \
-            power-models \
-            chiplet-validator \
             pyyaml \
             networkx \
             matplotlib \
             numpy \
             scipy \
             || echo "⚠️ Python chiplet packages installation failed"
+          
+          # Note: power-models and chiplet-validator are not available in PyPI
+          # These would need to be installed from their respective repositories
+          echo "ℹ️ power-models and chiplet-validator packages not available in PyPI (would need manual installation)"
           
           # 8. Thermal analysis tools (if available)
           echo "🔧 Installing thermal analysis tools..."
@@ -1077,8 +1102,8 @@ jobs:
             echo "C1 2 0 1u" >> /tmp/test_circuit.sp
             echo ".tran 0.1 1" >> /tmp/test_circuit.sp
             echo ".end" >> /tmp/test_circuit.sp
-            ngspice -b /tmp/test_circuit.sp > /tmp/ngspice_test.log 2>&1 || echo "⚠️ ngspice test failed"
-            echo "✅ ngspice test completed"
+            # Test ngspice with more lenient error handling
+            ngspice -b /tmp/test_circuit.sp > /tmp/ngspice_test.log 2>&1 && echo "✅ ngspice test completed" || echo "⚠️ ngspice test failed (but tool is available)"
           else
             echo "⚠️ ngspice not available for testing"
           fi
