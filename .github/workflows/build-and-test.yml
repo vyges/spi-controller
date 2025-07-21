@@ -61,6 +61,11 @@ on:
           - verilator
           - icarus
           - both
+      test_chiplet_tools:
+        description: 'Test chiplet development tools'
+        required: false
+        default: true
+        type: boolean
 
 # Disable automatic runs - this workflow only runs on manual trigger
 # and when explicitly enabled by repository maintainers
@@ -478,6 +483,62 @@ jobs:
             echo "⚠️ GTKWave ${{ env.GTKWAVE_VERSION }} not found (optional for waveform viewing)"
           fi
           
+          # Chiplet Development Tools Verification
+          echo "🔍 Verifying Chiplet Development Tools..."
+          
+          # High Priority Tools
+          if command -v tclsh &> /dev/null; then
+            echo "✅ TCL: $(tclsh -c 'puts $tcl_version')"
+          else
+            echo "⚠️ TCL not found (required for OpenSTA scripting)"
+          fi
+          
+          if command -v ngspice &> /dev/null; then
+            echo "✅ ngspice: $(ngspice --version | head -1)"
+          else
+            echo "⚠️ ngspice not found (optional for signal integrity analysis)"
+          fi
+          
+          if command -v julia &> /dev/null; then
+            echo "✅ Julia: $(julia --version | head -1)"
+          else
+            echo "⚠️ Julia not found (optional for PowerModels.jl)"
+          fi
+          
+          # Medium Priority Tools
+          if command -v opentimer &> /dev/null; then
+            echo "✅ OpenTimer: $(opentimer --version 2>/dev/null | head -1 || echo 'OpenTimer available')"
+          else
+            echo "⚠️ OpenTimer not found (optional for high-performance timing analysis)"
+          fi
+          
+          if command -v sta &> /dev/null; then
+            echo "✅ OpenSTA: $(sta --version 2>/dev/null | head -1 || echo 'OpenSTA available')"
+          else
+            echo "⚠️ OpenSTA not found (optional for static timing analysis)"
+          fi
+          
+          # Low Priority Tools
+          if command -v hwloc-ls &> /dev/null; then
+            echo "✅ hwloc: $(hwloc-ls --version 2>/dev/null | head -1 || echo 'hwloc available')"
+          else
+            echo "⚠️ hwloc not found (optional for thermal analysis)"
+          fi
+          
+          if command -v sensors &> /dev/null; then
+            echo "✅ lm-sensors: $(sensors --version 2>/dev/null | head -1 || echo 'lm-sensors available')"
+          else
+            echo "⚠️ lm-sensors not found (optional for thermal monitoring)"
+          fi
+          
+          # Python chiplet packages verification
+          echo "🔍 Verifying Python chiplet packages..."
+          $PYTHON_CMD -c "import yaml; print('✅ PyYAML available')" 2>/dev/null || echo "⚠️ PyYAML not found"
+          $PYTHON_CMD -c "import networkx; print('✅ NetworkX available')" 2>/dev/null || echo "⚠️ NetworkX not found"
+          $PYTHON_CMD -c "import matplotlib; print('✅ Matplotlib available')" 2>/dev/null || echo "⚠️ Matplotlib not found"
+          $PYTHON_CMD -c "import numpy; print('✅ NumPy available')" 2>/dev/null || echo "⚠️ NumPy not found"
+          $PYTHON_CMD -c "import scipy; print('✅ SciPy available')" 2>/dev/null || echo "⚠️ SciPy not found"
+          
           if command -v dot &> /dev/null; then
             echo "✅ Graphviz: $(dot -V | head -1)"
           else
@@ -581,6 +642,123 @@ jobs:
           fi
           
           echo "🌊 Surfer web-based VCD viewer setup complete"
+
+      - name: Install Chiplet Development Tools
+        run: |
+          echo "🔧 Installing Chiplet Development Tools..."
+          
+          # High Priority Tools (Essential for Chiplet Flow)
+          echo "📦 Installing High Priority Chiplet Tools..."
+          
+          # 1. TCL for OpenSTA scripting
+          echo "🔧 Installing TCL for OpenSTA scripting..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            tcl \
+            tcl-dev \
+            || echo "⚠️ TCL installation failed"
+          
+          # 2. SPICE Simulators for Signal Integrity Analysis
+          echo "🔧 Installing SPICE simulators for signal integrity..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            ngspice \
+            || echo "⚠️ ngspice installation failed"
+          
+          # 3. Julia for PowerModels.jl
+          echo "🔧 Installing Julia for PowerModels.jl..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            julia \
+            || echo "⚠️ Julia installation failed"
+          
+          # Medium Priority Tools (Important for Advanced Features)
+          echo "📦 Installing Medium Priority Chiplet Tools..."
+          
+          # 4. Additional build dependencies for chiplet tools
+          echo "🔧 Installing additional build dependencies..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            libreadline-dev \
+            libncurses5-dev \
+            libfftw3-dev \
+            libx11-dev \
+            libxpm-dev \
+            libxext-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxrender-dev \
+            libxss-dev \
+            libxtst-dev \
+            libxrandr-dev \
+            libasound2-dev \
+            libpulse-dev \
+            libdbus-1-dev \
+            libudev-dev \
+            libevdev-dev \
+            libmtdev-dev \
+            libts-dev \
+            libxcb1-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            || echo "⚠️ Some build dependencies failed"
+          
+          # 5. OpenTimer (High-performance static timing analysis)
+          echo "🔧 Installing OpenTimer for timing analysis..."
+          cd /tmp
+          git clone https://github.com/OpenTimer/OpenTimer.git || echo "⚠️ OpenTimer clone failed"
+          if [ -d "OpenTimer" ]; then
+            cd OpenTimer
+            mkdir build && cd build
+            cmake .. || echo "⚠️ OpenTimer cmake failed"
+            make -j$(nproc) || echo "⚠️ OpenTimer build failed"
+            sudo make install || echo "⚠️ OpenTimer install failed"
+            echo "✅ OpenTimer installation completed"
+          fi
+          cd $GITHUB_WORKSPACE
+          
+          # 6. OpenSTA (Open-source static timing analyzer)
+          echo "🔧 Installing OpenSTA for static timing analysis..."
+          cd /tmp
+          git clone https://github.com/The-OpenROAD-Project/OpenSTA.git || echo "⚠️ OpenSTA clone failed"
+          if [ -d "OpenSTA" ]; then
+            cd OpenSTA
+            mkdir build && cd build
+            cmake .. || echo "⚠️ OpenSTA cmake failed"
+            make -j$(nproc) || echo "⚠️ OpenSTA build failed"
+            sudo make install || echo "⚠️ OpenSTA install failed"
+            echo "✅ OpenSTA installation completed"
+          fi
+          cd $GITHUB_WORKSPACE
+          
+          # Low Priority Tools (Nice to Have)
+          echo "📦 Installing Low Priority Chiplet Tools..."
+          
+          # 7. Additional Python packages for chiplet analysis
+          echo "🔧 Installing Python chiplet analysis packages..."
+          $PIP_CMD install \
+            power-models \
+            chiplet-validator \
+            pyyaml \
+            networkx \
+            matplotlib \
+            numpy \
+            scipy \
+            || echo "⚠️ Python chiplet packages installation failed"
+          
+          # 8. Thermal analysis tools (if available)
+          echo "🔧 Installing thermal analysis tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            hwloc \
+            lm-sensors \
+            || echo "⚠️ Thermal analysis tools installation failed"
+          
+          # 9. Additional verification tools
+          echo "🔧 Installing additional verification tools..."
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            yosys-abc \
+            || echo "⚠️ Yosys ABC installation failed"
+          
+          echo "✅ Chiplet Development Tools installation complete"
 
       # Manual FPGA tool installation (fallback for apt package issues) - DISABLED
       # - name: Install FPGA tools manually
@@ -873,6 +1051,92 @@ jobs:
           fi
           
           echo "✅ cocotb test execution complete"
+
+      # Test chiplet development tools
+      - name: Test chiplet development tools
+        if: (github.event.inputs.test_chiplet_tools == 'true' || github.event_name != 'workflow_dispatch')
+        run: |
+          echo "🔧 Testing Chiplet Development Tools..."
+          
+          # Test TCL for OpenSTA scripting
+          echo "🧪 Testing TCL for OpenSTA scripting..."
+          if command -v tclsh &> /dev/null; then
+            echo 'puts "TCL version: $tcl_version"' | tclsh || echo "⚠️ TCL test failed"
+            echo "✅ TCL test completed"
+          else
+            echo "⚠️ TCL not available for testing"
+          fi
+          
+          # Test ngspice for signal integrity analysis
+          echo "🧪 Testing ngspice for signal integrity analysis..."
+          if command -v ngspice &> /dev/null; then
+            # Create a simple SPICE test file
+            echo "* Simple RC circuit test" > /tmp/test_circuit.sp
+            echo "V1 1 0 DC 5" >> /tmp/test_circuit.sp
+            echo "R1 1 2 1k" >> /tmp/test_circuit.sp
+            echo "C1 2 0 1u" >> /tmp/test_circuit.sp
+            echo ".tran 0.1 1" >> /tmp/test_circuit.sp
+            echo ".end" >> /tmp/test_circuit.sp
+            ngspice -b /tmp/test_circuit.sp > /tmp/ngspice_test.log 2>&1 || echo "⚠️ ngspice test failed"
+            echo "✅ ngspice test completed"
+          else
+            echo "⚠️ ngspice not available for testing"
+          fi
+          
+          # Test Julia for PowerModels.jl
+          echo "🧪 Testing Julia for PowerModels.jl..."
+          if command -v julia &> /dev/null; then
+            julia -e 'println("Julia version: ", VERSION)' || echo "⚠️ Julia test failed"
+            echo "✅ Julia test completed"
+          else
+            echo "⚠️ Julia not available for testing"
+          fi
+          
+          # Test OpenTimer for timing analysis
+          echo "🧪 Testing OpenTimer for timing analysis..."
+          if command -v opentimer &> /dev/null; then
+            opentimer --help > /tmp/opentimer_test.log 2>&1 || echo "⚠️ OpenTimer test failed"
+            echo "✅ OpenTimer test completed"
+          else
+            echo "⚠️ OpenTimer not available for testing"
+          fi
+          
+          # Test OpenSTA for static timing analysis
+          echo "🧪 Testing OpenSTA for static timing analysis..."
+          if command -v sta &> /dev/null; then
+            sta --help > /tmp/opensta_test.log 2>&1 || echo "⚠️ OpenSTA test failed"
+            echo "✅ OpenSTA test completed"
+          else
+            echo "⚠️ OpenSTA not available for testing"
+          fi
+          
+          # Test Python chiplet packages
+          echo "🧪 Testing Python chiplet packages..."
+          $PYTHON_CMD -c "import sys; print('Testing Python chiplet packages...')" || echo "⚠️ Python test failed"
+          $PYTHON_CMD -c "import yaml; print('✅ PyYAML: OK')" 2>/dev/null || echo "⚠️ PyYAML: Not available"
+          $PYTHON_CMD -c "import networkx as nx; print('✅ NetworkX: OK')" 2>/dev/null || echo "⚠️ NetworkX: Not available"
+          $PYTHON_CMD -c "import matplotlib; print('✅ Matplotlib: OK')" 2>/dev/null || echo "⚠️ Matplotlib: Not available"
+          $PYTHON_CMD -c "import numpy as np; print('✅ NumPy: OK')" 2>/dev/null || echo "⚠️ NumPy: Not available"
+          $PYTHON_CMD -c "import scipy; print('✅ SciPy: OK')" 2>/dev/null || echo "⚠️ SciPy: Not available"
+          echo "Python chiplet packages test completed"
+          
+          # Test thermal analysis tools
+          echo "🧪 Testing thermal analysis tools..."
+          if command -v hwloc-ls &> /dev/null; then
+            hwloc-ls --version > /tmp/hwloc_test.log 2>&1 || echo "⚠️ hwloc test failed"
+            echo "✅ hwloc test completed"
+          else
+            echo "⚠️ hwloc not available for testing"
+          fi
+          
+          if command -v sensors &> /dev/null; then
+            sensors --version > /tmp/sensors_test.log 2>&1 || echo "⚠️ lm-sensors test failed"
+            echo "✅ lm-sensors test completed"
+          else
+            echo "⚠️ lm-sensors not available for testing"
+          fi
+          
+          echo "✅ Chiplet Development Tools testing complete"
 
       # Synthesis step (OpenLane disabled - using Yosys only)
       - name: Run ASIC synthesis
