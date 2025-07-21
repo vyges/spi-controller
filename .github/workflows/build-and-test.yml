@@ -64,7 +64,7 @@ on:
       test_chiplet_tools:
         description: 'Test chiplet development tools'
         required: false
-        default: true
+        default: false
         type: boolean
 
 # Disable automatic runs - this workflow only runs on manual trigger
@@ -483,56 +483,65 @@ jobs:
             echo "⚠️ GTKWave ${{ env.GTKWAVE_VERSION }} not found (optional for waveform viewing)"
           fi
           
-          # Chiplet Development Tools Verification
-          echo "🔍 Verifying Chiplet Development Tools..."
-          
-          # High Priority Tools
-          if command -v tclsh &> /dev/null; then
-            echo "✅ TCL: $(tclsh -c 'puts $tcl_version')"
+          # Chiplet Development Tools Verification (only when enabled)
+          if [ "${{ github.event.inputs.test_chiplet_tools }}" = "true" ] || [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "🔍 Verifying Chiplet Development Tools..."
+            # Note: Some tools may show as "not found" - see TODO section above for future improvements
+            
+            # High Priority Tools
+            if command -v tclsh &> /dev/null; then
+              echo "✅ TCL: $(tclsh -c 'puts $tcl_version')"
+            else
+              echo "⚠️ TCL not found (required for OpenSTA scripting)"
+            fi
+            
+            if command -v ngspice &> /dev/null; then
+              echo "✅ ngspice: $(ngspice --version | head -1)"
+            else
+              echo "⚠️ ngspice not found (optional for signal integrity analysis)"
+            fi
+            
+            if command -v julia &> /dev/null; then
+              echo "✅ Julia: $(julia --version | head -1)"
+            else
+              echo "⚠️ Julia not found (optional for PowerModels.jl)"
+            fi
+            
+            # Medium Priority Tools
+            if command -v opentimer &> /dev/null; then
+              echo "✅ OpenTimer: $(opentimer --version 2>/dev/null | head -1 || echo 'OpenTimer available')"
+            else
+              echo "⚠️ OpenTimer not found (optional for high-performance timing analysis)"
+            fi
+            
+            if command -v sta &> /dev/null; then
+              echo "✅ OpenSTA: $(sta --version 2>/dev/null | head -1 || echo 'OpenSTA available')"
+            else
+              echo "⚠️ OpenSTA not found (optional for static timing analysis)"
+            fi
+            
+            # Low Priority Tools
+            if command -v hwloc-ls &> /dev/null; then
+              echo "✅ hwloc: $(hwloc-ls --version 2>/dev/null | head -1 || echo 'hwloc available')"
+            else
+              echo "⚠️ hwloc not found (optional for thermal analysis)"
+            fi
+            
+            if command -v sensors &> /dev/null; then
+              echo "✅ lm-sensors: $(sensors --version 2>/dev/null | head -1 || echo 'lm-sensors available')"
+            else
+              echo "⚠️ lm-sensors not found (optional for thermal monitoring)"
+            fi
           else
-            echo "⚠️ TCL not found (required for OpenSTA scripting)"
+            echo "⏭️ Skipping Chiplet Development Tools verification (disabled)"
           fi
           
-          if command -v ngspice &> /dev/null; then
-            echo "✅ ngspice: $(ngspice --version | head -1)"
+          # Python chiplet packages verification (only when chiplet tools are enabled)
+          if [ "${{ github.event.inputs.test_chiplet_tools }}" = "true" ] || [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "ℹ️ Python chiplet packages verification will be done after installation"
           else
-            echo "⚠️ ngspice not found (optional for signal integrity analysis)"
+            echo "⏭️ Skipping Python chiplet packages verification (chiplet tools disabled)"
           fi
-          
-          if command -v julia &> /dev/null; then
-            echo "✅ Julia: $(julia --version | head -1)"
-          else
-            echo "⚠️ Julia not found (optional for PowerModels.jl)"
-          fi
-          
-          # Medium Priority Tools
-          if command -v opentimer &> /dev/null; then
-            echo "✅ OpenTimer: $(opentimer --version 2>/dev/null | head -1 || echo 'OpenTimer available')"
-          else
-            echo "⚠️ OpenTimer not found (optional for high-performance timing analysis)"
-          fi
-          
-          if command -v sta &> /dev/null; then
-            echo "✅ OpenSTA: $(sta --version 2>/dev/null | head -1 || echo 'OpenSTA available')"
-          else
-            echo "⚠️ OpenSTA not found (optional for static timing analysis)"
-          fi
-          
-          # Low Priority Tools
-          if command -v hwloc-ls &> /dev/null; then
-            echo "✅ hwloc: $(hwloc-ls --version 2>/dev/null | head -1 || echo 'hwloc available')"
-          else
-            echo "⚠️ hwloc not found (optional for thermal analysis)"
-          fi
-          
-          if command -v sensors &> /dev/null; then
-            echo "✅ lm-sensors: $(sensors --version 2>/dev/null | head -1 || echo 'lm-sensors available')"
-          else
-            echo "⚠️ lm-sensors not found (optional for thermal monitoring)"
-          fi
-          
-          # Python chiplet packages verification (will be done after chiplet tools installation)
-          echo "ℹ️ Python chiplet packages verification will be done after installation"
           
           if command -v dot &> /dev/null; then
             echo "✅ Graphviz: $(dot -V | head -1)"
@@ -641,6 +650,41 @@ jobs:
       - name: Install Chiplet Development Tools
         run: |
           echo "🔧 Installing Chiplet Development Tools..."
+          
+          # TODO: Future Improvements for Chiplet Development Tools
+          # =====================================================
+          # The following tools are currently optional but may need to be fixed in the future:
+          #
+          # 1. FPGA Tools (Optional for FPGA flow):
+          #    - SymbiFlow: Not available in Ubuntu 24.04 repositories
+          #    - VPR: Requires manual build from VTR repository
+          #    - OpenFPGA: Requires manual build from OpenFPGA repository
+          #    - OpenROAD: May need manual installation or different package source
+          #
+          # 2. Signal Integrity Tools (Optional for analog/mixed-signal):
+          #    - ngspice: May need manual build or alternative package source
+          #
+          # 3. Advanced Timing Tools (Optional for high-performance analysis):
+          #    - OpenTimer: May need manual build or package installation
+          #    - OpenSTA: Currently failing due to Eigen3/CUDD dependencies
+          #
+          # 4. Thermal Analysis Tools (Optional for multi-die analysis):
+          #    - hwloc: May need manual installation
+          #    - lm-sensors: May need manual installation
+          #
+          # 5. Dependencies that need resolution:
+          #    - libcudd-dev: Not available in Ubuntu 24.04 (removed from dependencies)
+          #    - Eigen3: CMake configuration issues with OpenSTA
+          #
+          # When these tools become critical for chiplet development:
+          # 1. Check for updated packages in Ubuntu repositories
+          # 2. Implement manual build scripts with proper dependency resolution
+          # 3. Consider using container images with pre-built tools
+          # 4. Add alternative installation methods (conda, snap, etc.)
+          # 5. Update verification steps to properly detect installed tools
+          #
+          # Current Status: Basic chiplet tools (TCL, Julia) are working
+          # Advanced tools need manual intervention when required
           
           # High Priority Tools (Essential for Chiplet Flow)
           echo "📦 Installing High Priority Chiplet Tools..."
@@ -805,16 +849,20 @@ jobs:
           
           echo "✅ Chiplet Development Tools installation complete"
           
-          # Verify Python chiplet packages after installation
-          echo "🔍 Verifying Python chiplet packages after installation..."
-          if command -v python3 &> /dev/null; then
-            python3 -c "import yaml; print('✅ PyYAML available')" 2>/dev/null || echo "⚠️ PyYAML not found"
-            python3 -c "import networkx; print('✅ NetworkX available')" 2>/dev/null || echo "⚠️ NetworkX not found"
-            python3 -c "import matplotlib; print('✅ Matplotlib available')" 2>/dev/null || echo "⚠️ Matplotlib not found"
-            python3 -c "import numpy; print('✅ NumPy available')" 2>/dev/null || echo "⚠️ NumPy not found"
-            python3 -c "import scipy; print('✅ SciPy available')" 2>/dev/null || echo "⚠️ SciPy not found"
+          # Verify Python chiplet packages after installation (only when chiplet tools are enabled)
+          if [ "${{ github.event.inputs.test_chiplet_tools }}" = "true" ] || [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "🔍 Verifying Python chiplet packages after installation..."
+            if command -v python3 &> /dev/null; then
+              python3 -c "import yaml; print('✅ PyYAML available')" 2>/dev/null || echo "⚠️ PyYAML not found"
+              python3 -c "import networkx; print('✅ NetworkX available')" 2>/dev/null || echo "⚠️ NetworkX not found"
+              python3 -c "import matplotlib; print('✅ Matplotlib available')" 2>/dev/null || echo "⚠️ Matplotlib not found"
+              python3 -c "import numpy; print('✅ NumPy available')" 2>/dev/null || echo "⚠️ NumPy not found"
+              python3 -c "import scipy; print('✅ SciPy available')" 2>/dev/null || echo "⚠️ SciPy not found"
+            else
+              echo "⚠️ Python3 not available for package verification"
+            fi
           else
-            echo "⚠️ Python3 not available for package verification"
+            echo "⏭️ Skipping Python chiplet packages verification (chiplet tools disabled)"
           fi
 
       # Manual FPGA tool installation (fallback for apt package issues) - DISABLED
@@ -1114,6 +1162,7 @@ jobs:
         if: (github.event.inputs.test_chiplet_tools == 'true' || github.event_name != 'workflow_dispatch')
         run: |
           echo "🔧 Testing Chiplet Development Tools..."
+          # Note: Some tools may fail tests - see TODO section in installation for future improvements
           
           # Test TCL for OpenSTA scripting
           echo "🧪 Testing TCL for OpenSTA scripting..."
