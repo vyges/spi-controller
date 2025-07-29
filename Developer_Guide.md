@@ -10,6 +10,7 @@ This comprehensive guide covers:
 - Design, pinout, and interface documentation
 - Example metadata, RTL, testbenches, and flow configurations
 - Validation, CI/CD, and catalog publication
+- Code quality analysis and KPIs assessment
 - Best practices for quality, maintainability, and catalog readiness
 
 Whether you are a new user looking for a quickstart or an advanced developer seeking full automation, this guide will help you “Build IP, Not Boilerplate.”
@@ -349,7 +350,47 @@ git push -u origin main
 
 ## Licensing & Attribution
 
+### License Overview
+
+The `spi-controller` uses the Apache License, Version 2.0 for licensing. **Important**: This license applies specifically to the **hardware IP content** (RTL, documentation, testbenches, etc.) that you create using this template, not to the template structure and build processes themselves.
+
+### What's Licensed Under Apache-2.0
+- **Your RTL Files**: SystemVerilog, Verilog, VHDL source code
+- **Your Documentation**: IP specifications, design documents, user guides
+- **Your Testbenches**: Verification code, test vectors, simulation scripts
+- **Your Generated Content**: Synthesis reports, simulation results, analysis outputs
+
+### What's NOT Licensed Under Apache-2.0
+- **Template Structure**: Directory organization and file naming conventions
+- **Build Processes**: Makefiles, build scripts, CI/CD workflows
+- **Tool Integration**: Tool installation scripts and configuration
+- **Template Metadata**: Template JSON files and configuration templates
+- **AI Context and Processing Engine**:
+  - `.vyges-ai-context.json` - AI development context and prompts
+  - `.copilot-chat-context.md` - GitHub Copilot integration context
+  - `.cursorrules` - Cursor editor AI rules and conventions
+  - AI-generated code patterns and development workflows
+
+### Attribution Requirements
+
 The `NOTICE` file includes Vyges template and ecosystem attribution. When publishing your own IP, add your own copyright, maintainer, and project information to the bottom of the `NOTICE` file. This ensures proper attribution for both Vyges and your IP.
+
+### Example Attribution in RTL
+
+```systemverilog
+// Copyright (c) 2025 Your Name
+// Licensed under the Apache License, Version 2.0
+// See LICENSE file for details
+module your_ip_top (
+    // Your IP implementation
+);
+```
+
+### Detailed Licensing Information
+
+For comprehensive licensing guidance, including practical examples and legal considerations, see [LICENSE_SCOPE.md](LICENSE_SCOPE.md).
+
+**Note**: This template is designed to help you create properly licensed hardware IP. The Apache-2.0 license is widely used in the open hardware community and provides good protection while allowing commercial use.
 
 ## Step 2: Design Your IP Block
 
@@ -701,7 +742,7 @@ vyges init --interactive
 # Let's set up your functional IP project:
 # IP name: uart-controller (auto-detected from Git Repo name: github.com/janedoe/uart-controller)
 # Author: John Doe (auto-detected from Git: github.com/janedoe)
-# License: [MIT] Apache-2.0 BSD-3-Clause GPL-3.0 CERN-OHL-S Proprietary
+# License: [Apache-2.0] BSD-3-Clause GPL-3.0 CERN-OHL-S Proprietary
 # Target platforms: [ASIC] FPGA (space to select, enter to confirm)
 # Design type: [digital] analog mixed-signal
 # 
@@ -813,7 +854,7 @@ cp vyges-metadata.template.json vyges-metadata.json
 // - UART TX/RX interface
 //
 // Author: janedoe
-// License: MIT
+// License: Apache-2.0
 //=============================================================================
 
 module uart_controller #(
@@ -1120,6 +1161,48 @@ vyges validate --strict
 - `sim/run_simulation.sh`
 - `sim/Makefile`
 
+### 8.3 Code Quality Analysis and KPIs
+**✅ NEW FEATURE:** Use the built-in code KPIs analysis script for comprehensive project quality assessment.
+
+**The `scripts/code_kpis.py` script provides detailed analysis of:**
+- **Code Metrics**: Lines of RTL, testbench, and constraint files
+- **Documentation Analysis**: Coverage of README, Developer Guide, and other docs
+- **Test Coverage**: Analysis of test files, coverage reports, and test vectors
+- **Quality Metrics**: Linting, synthesis, and simulation status
+- **Vyges Metadata Analysis**: Comprehensive metadata quality assessment including:
+  - Field completeness and validation
+  - Interface quality analysis
+  - Test coverage metadata evaluation
+  - Flow configuration assessment
+  - AI generation readiness
+  - Catalog publication readiness
+- **Project Structure**: File organization and directory analysis
+
+**Usage:**
+```bash
+# Basic analysis
+python scripts/code_kpis.py
+
+# Detailed analysis with file breakdowns
+python scripts/code_kpis.py --detailed
+
+# Output in different formats
+python scripts/code_kpis.py --output json
+python scripts/code_kpis.py --output csv
+python scripts/code_kpis.py --output text
+
+# Analyze a specific project directory
+python scripts/code_kpis.py --project-root /path/to/project
+```
+
+**Integration:**
+- **CI/CD pipelines** for automated quality checks
+- **Development workflows** for progress tracking
+- **Project reviews** for completeness assessment
+- **Catalog validation** for publication readiness
+
+**See `scripts/README.md` for detailed documentation and examples.**
+
 ## Step 9: Integration and Packaging
 
 ### 9.1 AI-Assisted Integration (Recommended)
@@ -1226,6 +1309,7 @@ vyges publish
 8. **Integration support** - AI-generated integration examples
 9. **Testing infrastructure** - CLI-generated simulation and test scripts
 10. **Flow configuration** - AI-generated tool configurations
+11. **Code KPIs analysis** - Comprehensive project quality assessment with `scripts/code_kpis.py`
 
 ### ✅ Implemented Features (Developer Experience)
 11. **Interactive setup** - Guided initialization with `vyges init --interactive`
@@ -1256,6 +1340,7 @@ vyges publish
 8. **Integration support** - AI-generated integration examples
 9. **Testing infrastructure** - Simulation and verification setup
 10. **Flow configuration** - Tool-specific configuration generation
+11. **Code KPIs analysis** - Project quality assessment and metadata validation
 
 ### 🔄 In Progress Features
 11. **Interactive CLI** - Enhanced interactive mode with guided setup
@@ -1340,8 +1425,8 @@ vyges generate all --from-metadata vyges-metadata.json
   "design_type": ["digital"],
   "maturity": "beta",
   "template": "vyges-ip-template@1.0.0",
-  "created": "2024-01-15T10:30:00Z",
-  "updated": "2024-01-15T10:30:00Z",
+  "created": "2025-07-17T03:03:25Z",
+  "updated": "2025-07-17T03:03:25Z",
   "maintainers": [
     {
       "name": "Jane Doe",
@@ -1372,7 +1457,7 @@ vyges generate all --from-metadata vyges-metadata.json
       "generator": "vyges-cli",
       "init_tool": "vyges-cli",
       "template_version": "1.0.0",
-      "generated_at": "2024-01-15T10:30:00Z"
+      "generated_at": "2025-07-17T03:03:25Z"
     },
     "ai_generation": {
       "mode": "full_automation",
