@@ -1397,6 +1397,16 @@ jobs:
             cp test_harness_report.md public/
             echo "✅ Test harness report generated and copied to public directory"
           
+          # Copy gate analysis report to public directory
+          if [ -f "flow/yosys/gate_analysis_report.md" ]; then
+            cp flow/yosys/gate_analysis_report.md public/
+            echo "✅ Gate analysis report copied to public directory"
+          fi
+          if [ -f "flow/yosys/reports/comprehensive_report.md" ]; then
+            cp flow/yosys/reports/comprehensive_report.md public/
+            echo "✅ Comprehensive gate analysis report copied to public directory"
+          fi
+          
           # Convert markdown reports to HTML with styling
           echo "🔄 Converting markdown reports to HTML..."
           
@@ -1521,6 +1531,36 @@ jobs:
           </html>
           EOF
               echo "✅ Created basic HTML report (pandoc not available)"
+            fi
+          fi
+          
+          # Convert gate analysis report to HTML
+          if [ -f "public/gate_analysis_report.md" ]; then
+            if command -v pandoc &> /dev/null; then
+              pandoc public/gate_analysis_report.md -o public/gate_analysis_report.html --css=public/report-style.css --standalone --metadata title="Vyges SPI Controller IP - Gate Analysis Report" --include-after-body=public/vyges-footer.html
+              echo "✅ Converted gate analysis report to HTML with pandoc"
+            else
+              echo "⚠️ Pandoc not found, creating basic HTML for gate analysis report..."
+              cat > public/gate_analysis_report.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vyges SPI Controller IP - Gate Analysis Report</title>
+              <link rel="stylesheet" href="report-style.css">
+          </head>
+          <body>
+              <h1>Vyges SPI Controller IP - Gate Analysis Report</h1>
+              <p><em>Generated: $(date -u)</em></p>
+              <div class="highlight">
+                  <p><strong>Note:</strong> This is a basic HTML report generated without pandoc. For full formatting, install pandoc.</p>
+              </div>
+              <pre><code>$(cat public/gate_analysis_report.md)</code></pre>
+          </body>
+          </html>
+          EOF
+              echo "✅ Created basic HTML for gate analysis report (pandoc not available)"
             fi
           fi
           
@@ -1827,8 +1867,13 @@ jobs:
         run: |
           echo "🚀 Deploying synthesis reports to GitHub Pages..."
           
-          # Create index.html for GitHub Pages
-          cat > public/index.html << EOF
+          # Use generated index.html if available (includes gate info cards)
+          if [ -f "public/index.html" ]; then
+            echo "✅ Using generated index.html with gate info cards"
+          else
+            echo "⚠️ Generated index.html not found, creating basic template"
+            # Create basic index.html for GitHub Pages (fallback)
+            cat > public/index.html << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -2167,6 +2212,7 @@ jobs:
           </body>
           </html>
           EOF
+          fi
           
           # Configure git for deployment with proper authentication
           git config --global user.name "github-actions[bot]"
