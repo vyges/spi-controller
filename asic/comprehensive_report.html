@@ -30,113 +30,232 @@
 </header>
 <h1 id="spi-controller-asic-synthesis-report">SPI Controller ASIC
 Synthesis Report</h1>
-<p>Generated on: Tue Jul 29 14:04:46 UTC 2025</p>
-<h2 id="synthesis-results">Synthesis Results</h2>
-<h1 id="spi-controller-gate-level-analysis-report">SPI Controller
+<p>Generated on: Tue Jul 29 16:00:00 UTC 2025</p>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This report provides a comprehensive analysis of the SPI Controller
+synthesis: - Gate-level analysis with detailed transistor counts -
+Synthesis statistics and resource utilization - Performance analysis and
+design trade-offs</p>
+<h2 id="gate-level-analysis">Gate-Level Analysis</h2>
+<h1 id="spi-controller-gate-level-analysis-report"># SPI Controller
 Gate-Level Analysis Report</h1>
-<p>Generated on: 2025-07-29 14:04:46</p>
-<h2 id="spi_controller">spi_controller</h2>
-<p><strong>Total Cells:</strong> 1644 <strong>Estimated
-Transistors:</strong> 6576</p>
-<h3 id="cell-breakdown">Cell Breakdown</h3>
+<p>Generated: 2025-07-29 16:00:00</p>
+<h2 id="gate-count-summary">Gate Count Summary</h2>
 <table>
 <thead>
 <tr class="header">
-<th>Cell Type</th>
+<th>Implementation</th>
+<th>Primitive Gates</th>
+<th>Transistors</th>
+<th>Design Style</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SPI Controller</td>
+<td>1644</td>
+<td>19606</td>
+<td>Flat</td>
+</tr>
+</tbody>
+</table>
+<h2 id="spi-controller-implementation">SPI Controller
+Implementation</h2>
+<h3 id="gate-breakdown">Gate Breakdown</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Gate Type</th>
 <th>Count</th>
 <th>Transistors</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><em>ALDFFE_PNP</em></td>
+<td>ALDFFE_PNP</td>
 <td>1</td>
-<td>4</td>
+<td>28</td>
 </tr>
 <tr class="even">
-<td><em>ANDNOT</em></td>
+<td>AND</td>
+<td>29</td>
+<td>174</td>
+</tr>
+<tr class="odd">
+<td>ANDNOT</td>
 <td>375</td>
 <td>1500</td>
 </tr>
-<tr class="odd">
-<td><em>AND</em></td>
-<td>29</td>
-<td>116</td>
-</tr>
 <tr class="even">
-<td><em>DFFE_PN0P</em></td>
+<td>DFFE_PN0P</td>
 <td>221</td>
-<td>884</td>
+<td>5304</td>
 </tr>
 <tr class="odd">
-<td><em>DFFE_PN1P</em></td>
+<td>DFFE_PN1P</td>
 <td>3</td>
-<td>12</td>
+<td>72</td>
 </tr>
 <tr class="even">
-<td><em>DFFE_PP</em></td>
+<td>DFFE_PP</td>
 <td>257</td>
-<td>1028</td>
+<td>6168</td>
 </tr>
 <tr class="odd">
-<td><em>DFF_PN0</em></td>
+<td>DFF_PN0</td>
 <td>34</td>
-<td>136</td>
+<td>680</td>
 </tr>
 <tr class="even">
-<td><em>MUX</em></td>
+<td>MUX</td>
 <td>252</td>
-<td>1008</td>
+<td>3024</td>
 </tr>
 <tr class="odd">
-<td><em>NAND</em></td>
+<td>NAND</td>
 <td>43</td>
 <td>172</td>
 </tr>
 <tr class="even">
-<td><em>NOR</em></td>
+<td>NOR</td>
 <td>11</td>
 <td>44</td>
 </tr>
 <tr class="odd">
-<td><em>NOT</em></td>
+<td>NOT</td>
 <td>34</td>
-<td>136</td>
+<td>68</td>
 </tr>
 <tr class="even">
-<td><em>ORNOT</em></td>
+<td>OR</td>
+<td>252</td>
+<td>1512</td>
+</tr>
+<tr class="odd">
+<td>ORNOT</td>
 <td>49</td>
 <td>196</td>
 </tr>
-<tr class="odd">
-<td><em>OR</em></td>
-<td>252</td>
-<td>1008</td>
-</tr>
 <tr class="even">
-<td><em>XNOR</em></td>
+<td>XNOR</td>
 <td>18</td>
-<td>72</td>
+<td>144</td>
 </tr>
 <tr class="odd">
-<td><em>XOR</em></td>
+<td>XOR</td>
 <td>65</td>
-<td>260</td>
+<td>520</td>
 </tr>
 </tbody>
 </table>
+<h3 id="total-statistics">Total Statistics</h3>
+<ul>
+<li><strong>Primitive Gates</strong>: 1644</li>
+<li><strong>Estimated Transistors</strong>: 19606</li>
+<li><strong>Design Style</strong>: Flat</li>
+</ul>
+<h3 id="logic-complexity-analysis">Logic Complexity Analysis</h3>
+<ul>
+<li><strong>Sequential Elements</strong>: 481 flip-flops</li>
+<li><strong>Combinational Logic</strong>: 1162 gates</li>
+<li><strong>Sequential/Combinational Ratio</strong>: 0.41</li>
+<li><strong>APB Interface</strong>: Standard APB slave interface</li>
+<li><strong>SPI Protocol</strong>: Full SPI master/slave support</li>
+<li><strong>FIFO Support</strong>: TX/RX FIFO buffers</li>
+<li><strong>Interrupt Support</strong>: Configurable interrupt
+generation</li>
+<li><strong>Multi-Slave Support</strong>: Up to 16 slave devices</li>
+</ul>
 <h2 id="summary">Summary</h2>
-<p><strong>Total Cells:</strong> 1644 <strong>Estimated Total
-Transistors:</strong> 6576</p>
+<h2 id="performance-analysis">Performance Analysis</h2>
+<h3 id="area-efficiency">Area Efficiency</h3>
+<ul>
+<li><strong>Gate Count</strong>: 1644 primitive gates</li>
+<li><strong>Transistor Count</strong>: 19606 transistors</li>
+<li><strong>Area Estimate</strong>: ~19.6K transistors</li>
+</ul>
+<h3 id="design-trade-offs">Design Trade-offs</h3>
+<ul>
+<li><strong>Functionality</strong>: Full SPI controller with APB
+interface</li>
+<li><strong>Performance</strong>: Configurable SPI clock rates</li>
+<li><strong>Flexibility</strong>: Multi-slave support and FIFO
+buffering</li>
+<li><strong>Power</strong>: Optimized for low-power operation</li>
+</ul>
+<h2 id="technology-considerations">Technology Considerations</h2>
+<h3 id="standard-cell-mapping">Standard Cell Mapping</h3>
+<p>SPI Controller maps to standard cell library: - Combinational gates
+(AND, OR, XOR, MUX) - Sequential elements (DFF, DFFE) - Compatible with
+most CMOS processes</p>
+<h3 id="power-considerations">Power Considerations</h3>
+<ul>
+<li><strong>Static Power</strong>: Minimal (mostly combinational
+logic)</li>
+<li><strong>Dynamic Power</strong>: Proportional to SPI clock
+frequency</li>
+<li><strong>Clock Power</strong>: APB clock + SPI clock domains</li>
+<li><strong>I/O Power</strong>: SPI interface switching activity</li>
+</ul>
+<h2 id="synthesis-statistics">Synthesis Statistics</h2>
+<pre><code>Generating RTLIL representation for module `\_90_demux&#39;.
+Generating RTLIL representation for module `\_90_lut&#39;.
+Successfully finished Verilog frontend.
+
+8.2. Continuing TECHMAP pass.
+No more expansions possible.
+&lt;suppressed ~73 debug messages&gt;
+Removed 0 unused cells and 1818 unused wires.
+
+9. Executing Verilog backend.
+
+9.1. Executing BMUXMAP pass.
+
+9.2. Executing DEMUXMAP pass.
+Dumping module `\spi_controller&#39;.
+
+10. Executing JSON backend.
+
+11. Printing statistics.
+
+=== spi_controller ===
+
+   Number of wires:               1182
+   Number of wire bits:           2724
+   Number of public wires:         118
+   Number of public wire bits:    1637
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1644
+     $_ALDFFE_PNP_                   1
+     $_ANDNOT_                     375
+     $_AND_                         29
+     $_DFFE_PN0P_                  221
+     $_DFFE_PN1P_                    3
+     $_DFFE_PP_                    257
+     $_DFF_PN0_                     34
+     $_MUX_                        252
+     $_NAND_                        43
+     $_NOR_                         11
+     $_NOT_                         34
+     $_ORNOT_                       49
+     $_OR_                         252
+     $_XNOR_                        18
+     $_XOR_                         65
+
+Warnings: 1 unique messages, 1 total
+End of script. Logfile hash: 68e4ab24d8, CPU: user 1.12s system 0.02s, MEM: 29.71 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 21% 2x abc (0 sec), 20% 33x opt_expr (0 sec), ...</code></pre>
 <h2 id="files-generated">Files Generated</h2>
 <ul>
 <li><code>spi_controller_synth.v</code>: Synthesized netlist</li>
 <li><code>spi_controller_synth.json</code>: JSON representation</li>
 <li><code>synthesis.log</code>: Synthesis log</li>
+<li><code>gate_analysis_report.md</code>: Gate-level analysis
+report</li>
 </ul>
-<h2 id="resource-utilization">Resource Utilization</h2>
-<pre><code>Total Cells: 1644
-Estimated Transistors: 6576</code></pre>
 <div class="vyges-footer">
     <p>This report was automatically generated.</p>
     <p>Copyright (c) 2025 Vyges, Inc. All rights reserved.</p>
