@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Vyges SPI Controller IP - comprehensive_report</title>
+  <title>Vyges SPI Controller IP - Gate Analysis Report</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -26,17 +26,8 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">Vyges SPI Controller IP - comprehensive_report</h1>
+<h1 class="title">Vyges SPI Controller IP - Gate Analysis Report</h1>
 </header>
-<h1 id="spi-controller-asic-synthesis-report">SPI Controller ASIC
-Synthesis Report</h1>
-<p>Generated on: Tue Jul 29 16:37:38 UTC 2025</p>
-<h2 id="executive-summary">Executive Summary</h2>
-<p>This report provides a comprehensive analysis of the SPI Controller
-synthesis: - Gate-level analysis with detailed transistor counts -
-Synthesis statistics and resource utilization - Performance analysis and
-design trade-offs</p>
-<h2 id="gate-level-analysis">Gate-Level Analysis</h2>
 <h1 id="spi-controller-gate-level-analysis-report"># SPI Controller
 Gate-Level Analysis Report</h1>
 <p>Generated: 2025-07-29 16:37:38</p>
@@ -196,65 +187,6 @@ logic)</li>
 frequency</li>
 <li><strong>Clock Power</strong>: APB clock + SPI clock domains</li>
 <li><strong>I/O Power</strong>: SPI interface switching activity</li>
-</ul>
-<h2 id="synthesis-statistics">Synthesis Statistics</h2>
-<pre><code>Generating RTLIL representation for module `\_90_demux&#39;.
-Generating RTLIL representation for module `\_90_lut&#39;.
-Successfully finished Verilog frontend.
-
-8.2. Continuing TECHMAP pass.
-No more expansions possible.
-&lt;suppressed ~73 debug messages&gt;
-Removed 0 unused cells and 1818 unused wires.
-
-9. Executing Verilog backend.
-
-9.1. Executing BMUXMAP pass.
-
-9.2. Executing DEMUXMAP pass.
-Dumping module `\spi_controller&#39;.
-
-10. Executing JSON backend.
-
-11. Printing statistics.
-
-=== spi_controller ===
-
-   Number of wires:               1182
-   Number of wire bits:           2724
-   Number of public wires:         118
-   Number of public wire bits:    1637
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:               1644
-     $_ALDFFE_PNP_                   1
-     $_ANDNOT_                     375
-     $_AND_                         29
-     $_DFFE_PN0P_                  221
-     $_DFFE_PN1P_                    3
-     $_DFFE_PP_                    257
-     $_DFF_PN0_                     34
-     $_MUX_                        252
-     $_NAND_                        43
-     $_NOR_                         11
-     $_NOT_                         34
-     $_ORNOT_                       49
-     $_OR_                         252
-     $_XNOR_                        18
-     $_XOR_                         65
-
-Warnings: 1 unique messages, 1 total
-End of script. Logfile hash: 68e4ab24d8, CPU: user 1.14s system 0.02s, MEM: 29.78 MB peak
-Yosys 0.33 (git sha1 2584903a060)
-Time spent: 21% 2x abc (0 sec), 20% 33x opt_expr (0 sec), ...</code></pre>
-<h2 id="files-generated">Files Generated</h2>
-<ul>
-<li><code>spi_controller_synth.v</code>: Synthesized netlist</li>
-<li><code>spi_controller_synth.json</code>: JSON representation</li>
-<li><code>synthesis.log</code>: Synthesis log</li>
-<li><code>gate_analysis_report.md</code>: Gate-level analysis
-report</li>
 </ul>
 <div class="vyges-footer">
     <p>This report was automatically generated.</p>
