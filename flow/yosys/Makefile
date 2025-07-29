@@ -36,25 +36,33 @@ comprehensive_report: gate_analysis
 	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "Generated on: $$(date)" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
-	@echo "## Synthesis Results" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "## Executive Summary" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
-	@if [ -f $(BUILD_DIR)/gate_analysis_report.md ]; then cat $(BUILD_DIR)/gate_analysis_report.md >> $(REPORTS_DIR)/comprehensive_report.md; fi
+	@echo "This report provides a comprehensive analysis of the SPI Controller synthesis:" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "- Gate-level analysis with detailed transistor counts" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "- Synthesis statistics and resource utilization" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "- Performance analysis and design trade-offs" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "## Gate-Level Analysis" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
+	@if [ -f gate_analysis_report.md ]; then cat gate_analysis_report.md >> $(REPORTS_DIR)/comprehensive_report.md; fi
+	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "## Synthesis Statistics" >> $(REPORTS_DIR)/comprehensive_report.md
+	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
+	@if [ -f $(BUILD_DIR)/synthesis.log ]; then echo "\`\`\`" >> $(REPORTS_DIR)/comprehensive_report.md; tail -50 $(BUILD_DIR)/synthesis.log >> $(REPORTS_DIR)/comprehensive_report.md; echo "\`\`\`" >> $(REPORTS_DIR)/comprehensive_report.md; fi
 	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "## Files Generated" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "- \`spi_controller_synth.v\`: Synthesized netlist" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "- \`spi_controller_synth.json\`: JSON representation" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "- \`synthesis.log\`: Synthesis log" >> $(REPORTS_DIR)/comprehensive_report.md
-	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
-	@echo "## Resource Utilization" >> $(REPORTS_DIR)/comprehensive_report.md
-	@echo "" >> $(REPORTS_DIR)/comprehensive_report.md
-	@if [ -f $(BUILD_DIR)/gate_stats.txt ]; then echo "\`\`\`" >> $(REPORTS_DIR)/comprehensive_report.md; cat $(BUILD_DIR)/gate_stats.txt >> $(REPORTS_DIR)/comprehensive_report.md; echo "\`\`\`" >> $(REPORTS_DIR)/comprehensive_report.md; fi
+	@echo "- \`gate_analysis_report.md\`: Gate-level analysis report" >> $(REPORTS_DIR)/comprehensive_report.md
 	@echo "Comprehensive report generated: $(REPORTS_DIR)/comprehensive_report.md"
 
 # Clean
 clean:
 	rm -rf $(BUILD_DIR) $(REPORTS_DIR)
-	rm -f *.v *.json *.log
+	rm -f *.v *.json *.log gate_analysis_report.md
 
 # Help
 help:

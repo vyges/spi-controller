@@ -1790,6 +1790,20 @@ jobs:
           
           echo "✅ Test harness report generation complete"
 
+      # Generate GitHub Pages index with gates and die size
+      - name: Generate GitHub Pages index
+        if: always()
+        run: |
+          echo "🌐 Generating GitHub Pages index with gates and die size..."
+          
+          # Run the GitHub Pages generation script
+          if [ -f "scripts/generate_github_pages.py" ]; then
+            python3 scripts/generate_github_pages.py
+            echo "✅ GitHub Pages index generated with gates and die size cards"
+          else
+            echo "⚠️ GitHub Pages generation script not found"
+          fi
+
       # Upload artifacts
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

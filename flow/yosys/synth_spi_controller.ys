@@ -18,11 +18,14 @@ synth -top spi_controller -flatten
 # Technology mapping to standard cells (generic)
 abc -script +strash;scorr;ifraig;retime,{D};strash;dch,-f;map,-M,1,{D}
 
+# Map to specific gate types for analysis
+techmap
+
 # Clean up
 clean
 
-# Write synthesized netlist
-write_verilog spi_controller_synth.v
+# Write synthesized netlist (gate-level)
+write_verilog -noattr spi_controller_synth.v
 
 # Write JSON for further processing
 write_json spi_controller_synth.json
