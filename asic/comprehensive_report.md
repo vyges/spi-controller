@@ -1,6 +1,6 @@
 # SPI Controller ASIC Synthesis Report
 
-Generated on: Sat Aug 16 05:45:26 UTC 2025
+Generated on: Wed Oct  8 03:33:41 UTC 2025
 
 ## Executive Summary
 
@@ -14,7 +14,7 @@ This report provides a comprehensive analysis of the SPI Controller synthesis:
 # SPI Controller Gate-Level Analysis Report
 =======================================================
 
-Generated: 2025-08-16 05:45:26
+Generated: 2025-10-08 03:33:41
 
 ## Gate Count Summary
 
@@ -144,9 +144,9 @@ Dumping module `\spi_controller'.
      $_XOR_                         65
 
 Warnings: 1 unique messages, 1 total
-End of script. Logfile hash: 68e4ab24d8, CPU: user 1.12s system 0.02s, MEM: 29.61 MB peak
+End of script. Logfile hash: 68e4ab24d8, CPU: user 1.14s system 0.02s, MEM: 29.55 MB peak
 Yosys 0.33 (git sha1 2584903a060)
-Time spent: 22% 2x abc (0 sec), 20% 33x opt_expr (0 sec), ...
+Time spent: 21% 2x abc (0 sec), 20% 33x opt_expr (0 sec), ...
 ```
 
 ## Files Generated
